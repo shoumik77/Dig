@@ -129,6 +129,37 @@ describe("graphReducer", () => {
     expect(neighbors).toContain("artist:hardrive");
   });
 
+  it("loaded tracks the cursor position even when edges were pre-merged", async () => {
+    // release:i-get-lifted reveals artist:mk via a remixed_by edge. When MK is
+    // expanded, one of its two connections is already in the graph — loaded
+    // must still reach total.
+    let state = await initState();
+    const releasePage = await service.getConnections("release:i-get-lifted", {
+      limit: DEFAULT_PAGE_SIZE,
+    });
+    state = graphReducer(state, {
+      type: "EXPAND",
+      id: "release:i-get-lifted",
+      page: releasePage,
+    });
+    expect(state.nodes["artist:mk"]).toBeDefined();
+
+    const mkPage = await service.getConnections("artist:mk", {
+      limit: DEFAULT_PAGE_SIZE,
+    });
+    expect(mkPage.total).toBe(2);
+    state = graphReducer(state, {
+      type: "EXPAND",
+      id: "artist:mk",
+      page: mkPage,
+    });
+    expect(state.expansions["artist:mk"].loaded).toBe(2);
+    expect(state.expansions["artist:mk"].loaded).toBe(
+      state.expansions["artist:mk"].total
+    );
+    expect(hasMore(state, "artist:mk")).toBe(false);
+  });
+
   it("entity reachable from two parents appears once and parentOf keeps the first", async () => {
     let state = await initState();
     // Expand two releases that both connect to artist:louie-vega

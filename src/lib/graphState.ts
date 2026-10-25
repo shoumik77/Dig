@@ -35,7 +35,12 @@ export const initialGraphState: GraphState = {
   parentOf: {},
 };
 
-function mergePage(state: GraphState, id: string, page: ConnectionsPage): GraphState {
+function mergePage(
+  state: GraphState,
+  id: string,
+  page: ConnectionsPage,
+  append: boolean
+): GraphState {
   const nodes = { ...state.nodes };
   const edges = { ...state.edges };
   const parentOf = { ...state.parentOf };
@@ -46,9 +51,7 @@ function mergePage(state: GraphState, id: string, page: ConnectionsPage): GraphS
     }
     nodes[entity.id] = entity;
   }
-  let newEdges = 0;
   for (const rel of page.relationships) {
-    if (!(rel.id in edges)) newEdges += 1;
     edges[rel.id] = rel;
   }
 
@@ -61,7 +64,10 @@ function mergePage(state: GraphState, id: string, page: ConnectionsPage): GraphS
   const expansions = {
     ...state.expansions,
     [id]: {
-      loaded: Math.min(prev.loaded + newEdges, page.total),
+      loaded: Math.min(
+        (append ? prev.loaded : 0) + page.relationships.length,
+        page.total
+      ),
       total: page.total,
       nextCursor: page.nextCursor,
       status: page.nextCursor ? "idle" : "done",
@@ -105,8 +111,9 @@ export function graphReducer(state: GraphState, action: GraphAction): GraphState
     }
 
     case "EXPAND":
+      return mergePage(state, action.id, action.page, false);
     case "LOAD_MORE":
-      return mergePage(state, action.id, action.page);
+      return mergePage(state, action.id, action.page, true);
 
     case "RESET": {
       if (!state.rootId) return initialGraphState;

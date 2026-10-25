@@ -70,8 +70,9 @@ expand; `cy.fit` runs only on a fresh root and on reset.
   future FastAPI client; swapping backends changes one export.
 - **Offset cursor** in the mock (`nextCursor` is a string offset); a real
   backend can substitute an opaque cursor with no API change.
-- **`loaded` counts relationships**, not entities — each page's connections are
-  deduped by edge id, so repeated `EXPAND` dispatches can't inflate the count.
+- **`loaded` is a cursor position**: how many connections of that node have been
+  fetched, regardless of whether their edges were already merged via another
+  node's page. Nodes and edges are still deduped by id.
 - **Tailwind v4** design tokens live in `globals.css` `@theme`; entity colours
   are shared between CSS and Cytoscape via `ENTITY_COLORS`.
 - **The player is a placeholder** — controls are disabled and labelled
