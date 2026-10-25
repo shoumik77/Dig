@@ -35,17 +35,20 @@ export function MusicSearch({ onSelect, service = graphService }: MusicSearchPro
 
   useEffect(() => {
     const q = query.trim();
-    if (!q) {
-      setResults(EMPTY);
-      return;
-    }
-    const timer = setTimeout(() => {
-      void service.searchEntities(q).then((r) => {
-        setResults(r);
-        setHighlight(0);
-        setOpen(true);
-      });
-    }, 120);
+    const timer = setTimeout(
+      () => {
+        if (!q) {
+          setResults(EMPTY);
+          return;
+        }
+        void service.searchEntities(q).then((r) => {
+          setResults(r);
+          setHighlight(0);
+          setOpen(true);
+        });
+      },
+      q ? 120 : 0
+    );
     return () => clearTimeout(timer);
   }, [query, service]);
 
