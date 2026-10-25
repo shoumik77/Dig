@@ -97,6 +97,7 @@ export function MusicSearch({ onSelect, service = graphService }: MusicSearchPro
       <div className="flex items-center gap-2 rounded border border-border bg-surface px-3 h-9">
         <Search size={14} className="shrink-0 text-zinc-500" />
         <input
+          id="dig-search-input"
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
