@@ -27,6 +27,20 @@ export function AppShell() {
     stateRef.current = state;
   }, [state]);
 
+  // dev-only debug hooks for smoke testing; dead code in production builds
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    (window as unknown as Record<string, unknown>).__digState = state;
+    (window as unknown as Record<string, unknown>).__digActions = {
+      selectNode,
+      loadMore,
+      reset,
+      startFrom,
+      expand,
+      select,
+    };
+  }, [state, selectNode, loadMore, reset, startFrom, expand, select]);
+
   const selectedEntity = state.selectedId
     ? (state.nodes[state.selectedId] ?? null)
     : null;
@@ -121,7 +135,7 @@ export function AppShell() {
         <span className="text-sm font-semibold">Dig</span>
       </div>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[260px_1fr_340px]">
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] lg:grid-cols-[260px_1fr_340px]">
         {/* sidebar: column on lg+, overlay drawer below */}
         <aside className="hidden border-r border-border lg:block">{sidebar}</aside>
         {drawerOpen && (

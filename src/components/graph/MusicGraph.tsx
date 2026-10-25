@@ -32,6 +32,7 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
     const cyRef = useRef<Core | null>(null);
     const lastRootRef = useRef<string | null>(null);
     const ringCountRef = useRef<Map<string, number>>(new Map());
+    const pendingFitRef = useRef(false);
 
     const onNodeTapRef = useRef(onNodeTap);
     const onBackgroundTapRef = useRef(onBackgroundTap);
@@ -104,13 +105,21 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
       const cy = cyRef.current;
       if (!cy) return;
 
-      const { nodes, edges, rootId, parentOf } = state;
+      const { nodes, edges, rootId, parentOf, expansions } = state;
       const fresh =
         rootId !== lastRootRef.current ||
         (Object.keys(nodes).length === 1 && Object.keys(edges).length === 0);
 
-      if (fresh) ringCountRef.current.clear();
+      if (fresh) {
+        ringCountRef.current.clear();
+        // defer the fit until the root's first page arrives — a lone root
+        // has nothing meaningful to frame
+        const rootExpansion = rootId ? expansions[rootId] : undefined;
+        pendingFitRef.current =
+          !!rootId && (!rootExpansion || rootExpansion.loaded === 0);
+      }
 
+      let didInitialFit = false;
       cy.batch(() => {
         // remove anything no longer in state
         cy.nodes().forEach((el) => {
@@ -174,7 +183,8 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
         }
 
         // gentle reframe only if every new node landed outside the viewport
-        if (!fresh && newNodeIds.length > 0) {
+        didInitialFit = pendingFitRef.current && newNodeIds.length > 0;
+        if (!fresh && !didInitialFit && newNodeIds.length > 0) {
           const extent = cy.extent();
           const allOffscreen = newNodeIds.every((id) => {
             const p = cy.getElementById(id).position();
@@ -198,7 +208,10 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
         }
       });
 
-      if (fresh) {
+      if (didInitialFit) {
+        pendingFitRef.current = false;
+        cy.fit(undefined, 80);
+      } else if (fresh && !pendingFitRef.current) {
         cy.fit(undefined, 80);
       }
       lastRootRef.current = rootId;
@@ -244,12 +257,16 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
     }, [state, activeGenres]);
 
     return (
-      <div
-        ref={containerRef}
-        className="absolute inset-0"
-        role="img"
-        aria-label="Music relationship graph"
-      />
+      <div className="absolute inset-0">
+        {/* cytoscape forces position:relative on its container, so it must
+            size itself via h-full rather than absolute inset-0 */}
+        <div
+          ref={containerRef}
+          className="h-full w-full"
+          role="img"
+          aria-label="Music relationship graph"
+        />
+      </div>
     );
   }
 );
