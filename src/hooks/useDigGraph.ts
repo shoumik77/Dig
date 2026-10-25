@@ -16,7 +16,9 @@ export function useDigGraph(service: GraphService = graphService) {
   const [state, rawDispatch] = useReducer(graphReducer, initialGraphState);
   const requestToken = useRef(0);
   const stateRef = useRef(state);
-  stateRef.current = state;
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const dispatch = useCallback((action: GraphAction) => {
     if (action.type === "INIT_FROM" || action.type === "RESET") {
