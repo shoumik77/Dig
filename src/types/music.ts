@@ -11,6 +11,7 @@ export type Provenance = "demo" | "verified";
 export interface LabelMetadata {
   founded?: number;
   location?: string;
+  genres?: string[];
   aliases?: string[];
 }
 

@@ -11,11 +11,11 @@ const demo = { provenance: "demo" as const };
 export const mockMusic: MockDataset = {
   entities: [
     // ── Labels ──────────────────────────────────────────────────────────
-    { ...demo, id: "label:strictly-rhythm", name: "Strictly Rhythm", type: "label", metadata: { founded: 1989, location: "New York" } },
-    { ...demo, id: "label:defected", name: "Defected Records", type: "label", metadata: { founded: 1999, location: "London" } },
-    { ...demo, id: "label:roule", name: "Roulé", type: "label", metadata: { founded: 1995, location: "Paris" } },
-    { ...demo, id: "label:crydamoure", name: "Crydamoure", type: "label", metadata: { founded: 1997, location: "Paris" } },
-    { ...demo, id: "label:locked-on", name: "Locked On", type: "label", metadata: { founded: 1996, location: "London" } },
+    { ...demo, id: "label:strictly-rhythm", name: "Strictly Rhythm", type: "label", metadata: { founded: 1989, location: "New York", genres: ["House"] } },
+    { ...demo, id: "label:defected", name: "Defected Records", type: "label", metadata: { founded: 1999, location: "London", genres: ["House", "Disco"] } },
+    { ...demo, id: "label:roule", name: "Roulé", type: "label", metadata: { founded: 1995, location: "Paris", genres: ["French House"] } },
+    { ...demo, id: "label:crydamoure", name: "Crydamoure", type: "label", metadata: { founded: 1997, location: "Paris", genres: ["French House"] } },
+    { ...demo, id: "label:locked-on", name: "Locked On", type: "label", metadata: { founded: 1996, location: "London", genres: ["UK Garage"] } },
 
     // ── Artists ─────────────────────────────────────────────────────────
     { ...demo, id: "artist:hardrive", name: "Hardrive", type: "artist", metadata: { location: "New York" } },

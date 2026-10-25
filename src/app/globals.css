@@ -2,16 +2,15 @@
 
 @theme {
   --color-bg: #0b0b0d;
-  --color-panel: #141417;
-  --color-border: #232326;
-  --color-text: #e8e8ea;
-  --color-muted: #9a9aa2;
-  --color-accent-label: #f5b942;
-  --color-accent-artist: #2dd4bf;
-  --color-accent-release: #a78bfa;
+  --color-surface: #121216;
+  --color-surface-2: #18181d;
+  --color-border: #232329;
+  --color-label: #f5a524;
+  --color-artist: #2dd4bf;
+  --color-release: #a78bfa;
 }
 
 body {
   background: var(--color-bg);
-  color: var(--color-text);
+  color: var(--color-text, #f4f4f5);
 }

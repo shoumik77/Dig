@@ -1,10 +1,28 @@
+"use client";
+
+import { useRef } from "react";
+import { MusicGraph, type MusicGraphHandle } from "@/components/graph/MusicGraph";
+import { GraphControls } from "@/components/graph/GraphControls";
+import { useDigGraph } from "@/hooks/useDigGraph";
+
 export default function Home() {
+  const { state, selectNode, select, reset } = useDigGraph();
+  const graphRef = useRef<MusicGraphHandle>(null);
+
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-semibold tracking-tight">Dig</h1>
-        <p className="mt-2 text-sm text-neutral-400">Follow the sound.</p>
-      </div>
+    <main className="relative h-screen w-screen">
+      <MusicGraph
+        ref={graphRef}
+        state={state}
+        onNodeTap={selectNode}
+        onBackgroundTap={() => select(null)}
+      />
+      <GraphControls
+        onZoomIn={() => graphRef.current?.zoomIn()}
+        onZoomOut={() => graphRef.current?.zoomOut()}
+        onFit={() => graphRef.current?.fit()}
+        onReset={reset}
+      />
     </main>
   );
 }
