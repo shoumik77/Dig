@@ -1,0 +1,28 @@
+{
+ "ipis": [],
+ "disambiguation": "",
+ "type-id": "7aaa37fe-2def-3476-b359-80245850062d",
+ "area": {
+  "iso-3166-1-codes": [
+   "US"
+  ],
+  "type": null,
+  "sort-name": "United States",
+  "id": "489ce91b-6658-3307-9877-795b68554c98",
+  "type-id": null,
+  "name": "United States",
+  "disambiguation": ""
+ },
+ "country": "US",
+ "isnis": [],
+ "label-code": 2611,
+ "life-span": {
+  "ended": false,
+  "end": null,
+  "begin": "1989"
+ },
+ "name": "Strictly Rhythm",
+ "sort-name": "Strictly Rhythm",
+ "type": "Original Production",
+ "id": "29c1256a-d989-4035-a856-95d707e2082c"
+}

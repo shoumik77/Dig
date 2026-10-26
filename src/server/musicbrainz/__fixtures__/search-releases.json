@@ -1,0 +1,210 @@
+{
+ "created": "2026-10-26T20:33:06.364Z",
+ "count": 38264,
+ "offset": 0,
+ "releases": [
+  {
+   "id": "1707c451-8f0b-4ea0-a50e-9163e4c33d37",
+   "score": 100,
+   "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+   "artist-credit-id": "f03dd386-9c5c-3bae-9d1a-7ef49efb32f8",
+   "count": 1,
+   "title": "Deep Inside",
+   "status": "Official",
+   "text-representation": {
+    "language": "eng",
+    "script": "Latn"
+   },
+   "artist-credit": [
+    {
+     "name": "Megaptera",
+     "artist": {
+      "id": "8e04ff44-ccb5-40f2-b550-26fd2fca8faa",
+      "name": "Megaptera",
+      "sort-name": "Megaptera"
+     }
+    }
+   ],
+   "release-group": {
+    "id": "ea10a216-887a-43a0-94db-bdf80424a490",
+    "type-id": "6d0c5bf6-7a33-3420-a519-44fc63eedebf",
+    "primary-type-id": "6d0c5bf6-7a33-3420-a519-44fc63eedebf",
+    "title": "Deep Inside",
+    "primary-type": "EP"
+   },
+   "date": "1997",
+   "country": "IT",
+   "release-events": [
+    {
+     "date": "1997",
+     "area": {
+      "id": "c6500277-9a3d-349b-bf30-41afdbf42add",
+      "name": "Italy",
+      "sort-name": "Italy",
+      "iso-3166-1-codes": [
+       "IT"
+      ]
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "SPEP01",
+     "label": {
+      "id": "680a4063-2e50-4b24-ad87-f680580da969",
+      "name": "Slaughter Productions"
+     }
+    }
+   ],
+   "track-count": 3,
+   "media": [
+    {
+     "id": "2b127d5b-56d4-3dc0-9aaa-76734ade07c8",
+     "format": "12\" Vinyl",
+     "disc-count": 0,
+     "track-count": 3
+    }
+   ]
+  },
+  {
+   "id": "39871a8c-65bd-4c6b-83ed-970926d2ca3b",
+   "score": 100,
+   "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+   "packaging-id": "119eba76-b343-3e02-a292-f0f00644bb9b",
+   "artist-credit-id": "ffaf4d06-b829-3777-9f93-0a4d8bfbf470",
+   "count": 1,
+   "title": "Deep Inside",
+   "status": "Official",
+   "packaging": "None",
+   "text-representation": {
+    "language": "eng"
+   },
+   "artist-credit": [
+    {
+     "name": "Bart Gori",
+     "artist": {
+      "id": "614278f6-5b8a-426f-a048-6c95f89bef52",
+      "name": "Bart Gori",
+      "sort-name": "Bart Gori"
+     }
+    }
+   ],
+   "release-group": {
+    "id": "f2752278-4dfb-49b7-bdd4-ac044c32dac0",
+    "type-id": "d6038452-8ee0-3f68-affc-2de9a1ede0b9",
+    "primary-type-id": "d6038452-8ee0-3f68-affc-2de9a1ede0b9",
+    "title": "Deep Inside",
+    "primary-type": "Single"
+   },
+   "date": "2017-03-31",
+   "country": "US",
+   "release-events": [
+    {
+     "date": "2017-03-31",
+     "area": {
+      "id": "489ce91b-6658-3307-9877-795b68554c98",
+      "name": "United States",
+      "sort-name": "United States",
+      "iso-3166-1-codes": [
+       "US"
+      ]
+     }
+    }
+   ],
+   "barcode": "3614973805950",
+   "asin": "B06X161P4C",
+   "label-info": [
+    {
+     "catalog-number": "KPR 208",
+     "label": {
+      "id": "354ee52c-5d8c-4180-95c0-3bf67b3b7927",
+      "name": "Karmic Power Records"
+     }
+    }
+   ],
+   "track-count": 3,
+   "media": [
+    {
+     "id": "521e7fd6-c15f-3410-b2d5-31a2d3da7f62",
+     "format": "Digital Media",
+     "disc-count": 0,
+     "track-count": 3
+    }
+   ],
+   "tags": [
+    {
+     "count": 1,
+     "name": "dance"
+    },
+    {
+     "count": 1,
+     "name": "house"
+    }
+   ]
+  },
+  {
+   "id": "32276baa-84e2-43ca-96f5-bdeabb5de7a1",
+   "score": 100,
+   "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+   "artist-credit-id": "3b13e9fa-9062-3977-aa88-79013313bb76",
+   "count": 1,
+   "title": "Deep Inside",
+   "status": "Official",
+   "text-representation": {
+    "language": "eng",
+    "script": "Latn"
+   },
+   "artist-credit": [
+    {
+     "name": "Oracle Sun",
+     "artist": {
+      "id": "b687dcb9-208b-46c4-953b-961903b2b366",
+      "name": "Oracle Sun",
+      "sort-name": "Oracle Sun"
+     }
+    }
+   ],
+   "release-group": {
+    "id": "be6d9497-5643-38ba-a051-5e7bcdb5e260",
+    "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+    "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+    "title": "Deep Inside",
+    "primary-type": "Album"
+   },
+   "date": "2005-05-25",
+   "country": "JP",
+   "release-events": [
+    {
+     "date": "2005-05-25",
+     "area": {
+      "id": "2db42837-c832-3c27-b4a3-08198f75693c",
+      "name": "Japan",
+      "sort-name": "Japan",
+      "iso-3166-1-codes": [
+       "JP"
+      ]
+     }
+    }
+   ],
+   "barcode": "4988003311575",
+   "label-info": [
+    {
+     "catalog-number": "KICP 1076",
+     "label": {
+      "id": "b180b1f4-f61b-425c-9af2-a18291d0b9f1",
+      "name": "METAL FRONTIER"
+     }
+    }
+   ],
+   "track-count": 10,
+   "media": [
+    {
+     "id": "4ccd34fb-7b37-32d0-b13d-bcd3270fa905",
+     "format": "CD",
+     "disc-count": 0,
+     "track-count": 10
+    }
+   ]
+  }
+ ]
+}
