@@ -76,7 +76,12 @@ export function EntityDetails({
   const expanded = isExpanded(state, entity.id);
   const more = hasMore(state, entity.id);
   const loading = expansion?.status === "loading";
-  const remaining = expansion ? expansion.total - expansion.loaded : 0;
+  const failed = expansion?.status === "error";
+  const remaining = expansion
+    ? Math.max(0, expansion.total - expansion.loaded)
+    : 0;
+  const providerLabel =
+    entity.provenance === "verified" ? "MusicBrainz" : "demo data";
 
   // group touching relationships by (type, direction)
   const groups = new Map<string, { label: string; items: { rel: MusicRelationship; other: MusicEntity }[] }>();
@@ -177,7 +182,7 @@ export function EntityDetails({
               ))}
             </div>
           ))}
-          {expansion && (
+          {expansion && expansion.total > 0 && (
             <div className="mt-1 text-[11px] text-zinc-500">
               Showing {expansion.loaded} of {expansion.total} connections
             </div>
@@ -187,14 +192,30 @@ export function EntityDetails({
 
       {/* actions */}
       <div className="mt-auto border-t border-border p-4">
+        {failed && (
+          <div className="mb-3 flex items-center justify-between gap-2 text-xs text-red-300/80">
+            <span>Couldn&rsquo;t load connections from {providerLabel}</span>
+            <button
+              type="button"
+              onClick={() =>
+                expansion?.nextCursor
+                  ? onLoadMore(entity.id)
+                  : onExpand(entity.id)
+              }
+              className="rounded border border-border px-2 py-0.5 text-[11px] text-zinc-200 transition-colors duration-150 hover:bg-surface-2"
+            >
+              Retry
+            </button>
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => onExpand(entity.id)}
-            disabled={expanded}
+            disabled={loading || (expanded && !failed)}
             className="rounded bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 transition-colors duration-150 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Expand
+            {loading ? "Loading…" : "Expand"}
           </button>
           {more && (
             <button

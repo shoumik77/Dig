@@ -106,4 +106,12 @@ export const cytoscapeStylesheet: StylesheetJson = [
     selector: ".loading",
     style: { opacity: 0.6 },
   },
+  {
+    selector: ".error",
+    style: {
+      "border-style": "dotted",
+      "border-width": 2,
+      "border-color": "#f87171",
+    },
+  },
 ];

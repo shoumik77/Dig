@@ -221,6 +221,25 @@ describe("graphController", () => {
     });
   });
 
+  it("selectNode retries an expansion that previously failed", async () => {
+    let calls = 0;
+    const { service, getConnections } = makeService({
+      getConnections: () =>
+        calls++ === 0
+          ? Promise.reject(new Error("boom"))
+          : Promise.resolve(page([], [])),
+    });
+    const { controller, getState } = harness(service);
+    await controller.expand("a");
+    expect(getState().expansions["a"].status).toBe("error");
+    controller.selectNode("a");
+    await vi.waitFor(() => {
+      expect(getState().expansions["a"].status).toBe("done");
+    });
+    expect(getConnections).toHaveBeenCalledTimes(2);
+    expect(getState().selectedId).toBe("a");
+  });
+
   it("a disposed controller drops a late response after its service is swapped", async () => {
     const d = deferred<ConnectionsPage>();
     const first = makeService({ getConnections: () => d.promise });

@@ -224,7 +224,7 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
       const { selectedId, expansions, nodes } = state;
 
       cy.batch(() => {
-        cy.elements().removeClass("selected neighbor dimmed has-more loading");
+        cy.elements().removeClass("selected neighbor dimmed has-more loading error");
 
         if (selectedId) {
           const selected = cy.getElementById(selectedId);
@@ -252,6 +252,7 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
           if (el.empty()) continue;
           if (expansion.nextCursor) el.addClass("has-more");
           if (expansion.status === "loading") el.addClass("loading");
+          if (expansion.status === "error") el.addClass("error");
         }
       });
     }, [state, activeGenres]);

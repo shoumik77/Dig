@@ -261,6 +261,46 @@ describe("graphReducer", () => {
     );
   });
 
+  it("merges metadata when a sparse copy of a known entity arrives", async () => {
+    let state = await initState();
+    const page1 = await firstPage(ROOT_ID);
+    state = graphReducer(state, { type: "EXPAND", id: ROOT_ID, page: page1 });
+
+    const existingId = page1.entities[0].id;
+    const sparse: ConnectionsPage = {
+      entities: [
+        { ...page1.entities[0], metadata: { country: "US" } },
+      ],
+      relationships: [],
+      nextCursor: null,
+      total: 0,
+    };
+    const before = state.nodes[existingId];
+    state = graphReducer(state, { type: "LOAD_MORE", id: ROOT_ID, page: sparse });
+    const merged = state.nodes[existingId];
+    expect(merged.metadata).toEqual({
+      ...before.metadata,
+      country: "US",
+    });
+
+    // incoming entity with no metadata at all keeps existing metadata
+    const noMeta: ConnectionsPage = {
+      entities: [
+        {
+          id: existingId,
+          name: page1.entities[0].name,
+          type: page1.entities[0].type,
+          provenance: page1.entities[0].provenance,
+        },
+      ],
+      relationships: [],
+      nextCursor: null,
+      total: 0,
+    };
+    state = graphReducer(state, { type: "LOAD_MORE", id: ROOT_ID, page: noMeta });
+    expect(state.nodes[existingId].metadata).toEqual(merged.metadata);
+  });
+
   it("RESET after multiple expansions leaves only the root", async () => {
     let state = await initState();
     const labelPage = await firstPage(ROOT_ID);

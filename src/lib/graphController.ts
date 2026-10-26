@@ -105,7 +105,8 @@ export function createGraphController(
 
     selectNode(id) {
       dispatch({ type: "SELECT", id });
-      if (!getState().expansions[id]) void expand(id);
+      const status = getState().expansions[id]?.status;
+      if (status === undefined || status === "error") void expand(id);
     },
 
     select(id) {
