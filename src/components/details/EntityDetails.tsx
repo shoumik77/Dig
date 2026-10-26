@@ -20,17 +20,37 @@ interface EntityDetailsProps {
   onClose(): void;
 }
 
-const META_LABELS: Record<string, string> = {
-  founded: "Founded",
-  country: "Country",
-  genres: "Genres",
-  year: "Year",
-  catalogNumber: "Catalogue no.",
-  format: "Format",
-  aliases: "Also known as",
-  origin: "Origin",
-  location: "Location",
-  realName: "Real name",
+interface MetaField {
+  label: string;
+  get(meta: Record<string, unknown>): unknown;
+  demoOnly?: boolean;
+}
+
+const META_FIELDS: Record<MusicEntity["type"], MetaField[]> = {
+  label: [
+    { label: "Country", get: (m) => m.country },
+    { label: "Founded", get: (m) => m.foundedDate ?? m.founded },
+    { label: "Location", get: (m) => m.location, demoOnly: true },
+    { label: "Genres", get: (m) => m.genres, demoOnly: true },
+    { label: "Description", get: (m) => m.disambiguation },
+    { label: "Also known as", get: (m) => m.aliases },
+  ],
+  artist: [
+    { label: "Country", get: (m) => m.country },
+    { label: "Type", get: (m) => m.artistType },
+    { label: "Location", get: (m) => m.location, demoOnly: true },
+    { label: "Real name", get: (m) => m.realName, demoOnly: true },
+    { label: "Description", get: (m) => m.disambiguation },
+    { label: "Also known as", get: (m) => m.aliases },
+  ],
+  release: [
+    { label: "Date", get: (m) => m.date ?? m.year },
+    { label: "Country", get: (m) => m.country },
+    { label: "Catalogue no.", get: (m) => m.catalogNumber },
+    { label: "Format", get: (m) => m.format },
+    { label: "Status", get: (m) => m.status },
+    { label: "Credited artists", get: (m) => m.artistCredit },
+  ],
 };
 
 /** Human label for a relationship group as seen from `entity`'s perspective. */
@@ -44,13 +64,11 @@ function groupLabel(type: RelationshipType, outgoing: boolean): string {
       return outgoing ? "Produced by" : "Produced";
     case "remixed_by":
       return outgoing ? "Remixed by" : "Remixed";
+    case "credited_to":
+      return outgoing ? "Credited to" : "Credited on";
   }
 }
 
-function formatMeta(value: unknown): string {
-  if (Array.isArray(value)) return value.join(", ");
-  return String(value);
-}
 
 export function EntityDetails({
   state,
@@ -74,7 +92,12 @@ export function EntityDetails({
   const expanded = isExpanded(state, entity.id);
   const more = hasMore(state, entity.id);
   const loading = expansion?.status === "loading";
-  const remaining = expansion ? expansion.total - expansion.loaded : 0;
+  const failed = expansion?.status === "error";
+  const remaining = expansion
+    ? Math.max(0, expansion.total - expansion.loaded)
+    : 0;
+  const providerLabel =
+    entity.provenance === "verified" ? "MusicBrainz" : "demo data";
 
   // group touching relationships by (type, direction)
   const groups = new Map<string, { label: string; items: { rel: MusicRelationship; other: MusicEntity }[] }>();
@@ -97,9 +120,17 @@ export function EntityDetails({
     a.label.localeCompare(b.label)
   );
 
-  const metaEntries = Object.entries(entity.metadata ?? {}).filter(
-    ([, v]) => v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0)
+  const verified = entity.provenance === "verified";
+  const meta = (entity.metadata ?? {}) as Record<string, unknown>;
+  const metaFields = META_FIELDS[entity.type].filter(
+    (f) => !(f.demoOnly && verified)
   );
+
+  function metaValue(v: unknown): string | null {
+    if (v === undefined || v === null || v === "") return null;
+    if (Array.isArray(v)) return v.length ? v.join(", ") : null;
+    return String(v);
+  }
 
   function flashCrateHint() {
     setCrateHint(true);
@@ -126,6 +157,17 @@ export function EntityDetails({
               Demo data
             </span>
           )}
+          {verified && entity.source && (
+            <a
+              href={entity.source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View on MusicBrainz"
+              className="mt-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-400 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-200"
+            >
+              MusicBrainz <ExternalLink size={9} />
+            </a>
+          )}
         </div>
         <button
           type="button"
@@ -138,17 +180,26 @@ export function EntityDetails({
       </div>
 
       {/* metadata */}
-      {metaEntries.length > 0 && (
-        <dl className="border-t border-border px-4 py-3">
-          {metaEntries.map(([key, value]) => (
-            <div key={key} className="mb-1.5 flex gap-2 text-sm">
-              <dt className="w-24 shrink-0 text-zinc-500">
-                {META_LABELS[key] ?? key}
-              </dt>
-              <dd className="text-zinc-200">{formatMeta(value)}</dd>
+      <dl className="border-t border-border px-4 py-3">
+        {metaFields.map((field) => {
+          const value = metaValue(field.get(meta));
+          return (
+            <div key={field.label} className="mb-1.5 flex gap-2 text-sm">
+              <dt className="w-24 shrink-0 text-zinc-500">{field.label}</dt>
+              {value !== null ? (
+                <dd className="text-zinc-200">{value}</dd>
+              ) : (
+                <dd className="italic text-zinc-600">Not available</dd>
+              )}
             </div>
-          ))}
-        </dl>
+          );
+        })}
+      </dl>
+      {verified && (
+        <div className="border-t border-border px-4 py-2 text-[10px] text-zinc-500">
+          Metadata retrieved from MusicBrainz. Artist credits are credits, not
+          production or remix claims.
+        </div>
       )}
 
       {/* connections */}
@@ -175,7 +226,7 @@ export function EntityDetails({
               ))}
             </div>
           ))}
-          {expansion && (
+          {expansion && expansion.total > 0 && (
             <div className="mt-1 text-[11px] text-zinc-500">
               Showing {expansion.loaded} of {expansion.total} connections
             </div>
@@ -185,14 +236,30 @@ export function EntityDetails({
 
       {/* actions */}
       <div className="mt-auto border-t border-border p-4">
+        {failed && (
+          <div className="mb-3 flex items-center justify-between gap-2 text-xs text-red-300/80">
+            <span>Couldn&rsquo;t load connections from {providerLabel}</span>
+            <button
+              type="button"
+              onClick={() =>
+                expansion?.nextCursor
+                  ? onLoadMore(entity.id)
+                  : onExpand(entity.id)
+              }
+              className="rounded border border-border px-2 py-0.5 text-[11px] text-zinc-200 transition-colors duration-150 hover:bg-surface-2"
+            >
+              Retry
+            </button>
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => onExpand(entity.id)}
-            disabled={expanded}
+            disabled={loading || (expanded && !failed)}
             className="rounded bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 transition-colors duration-150 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Expand
+            {loading ? "Loading…" : "Expand"}
           </button>
           {more && (
             <button

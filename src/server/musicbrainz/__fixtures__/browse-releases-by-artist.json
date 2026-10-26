@@ -1,0 +1,246 @@
+{
+ "releases": [
+  {
+   "title": "Dancing for Heaven",
+   "packaging": null,
+   "asin": null,
+   "cover-art-archive": {
+    "artwork": false,
+    "count": 0,
+    "darkened": false,
+    "back": false,
+    "front": false
+   },
+   "release-events": [
+    {
+     "date": "1995",
+     "area": {
+      "iso-3166-1-codes": [
+       "US"
+      ],
+      "name": "United States",
+      "id": "489ce91b-6658-3307-9877-795b68554c98",
+      "sort-name": "United States",
+      "type": null,
+      "type-id": null,
+      "disambiguation": ""
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "BR-001",
+     "label": {
+      "name": "Bean Records",
+      "id": "eba78127-3e1b-4e6a-98c1-800ddece313b",
+      "label-code": null,
+      "sort-name": "Bean Records",
+      "type": null,
+      "type-id": null,
+      "disambiguation": ""
+     }
+    }
+   ],
+   "media": [
+    {
+     "position": 1,
+     "format": "12\" Vinyl",
+     "id": "20219322-ced1-3215-b5d1-71a160046d21",
+     "track-count": 4,
+     "format-id": "3e9080b0-5e6c-34ab-bd15-f526b6306a64",
+     "title": ""
+    }
+   ],
+   "country": "US",
+   "packaging-id": null,
+   "quality": "normal",
+   "text-representation": {
+    "script": "Latn",
+    "language": "eng"
+   },
+   "id": "55d14f1e-99b0-4f14-b7d2-6600a650ca74",
+   "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+   "date": "1995",
+   "disambiguation": "",
+   "artist-credit": [
+    {
+     "joinphrase": "",
+     "name": "Todd Edwards",
+     "artist": {
+      "name": "Todd Edwards",
+      "id": "fa0e2024-95ff-44b6-9a86-f0ab120b6a72",
+      "sort-name": "Edwards, Todd",
+      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+      "country": "US",
+      "type": "Person",
+      "disambiguation": ""
+     }
+    }
+   ],
+   "status": "Official",
+   "barcode": null
+  },
+  {
+   "artist-credit": [
+    {
+     "joinphrase": "",
+     "artist": {
+      "disambiguation": "",
+      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+      "type": "Person",
+      "country": "US",
+      "sort-name": "Edwards, Todd",
+      "id": "fa0e2024-95ff-44b6-9a86-f0ab120b6a72",
+      "name": "Todd Edwards"
+     },
+     "name": "Todd Edwards"
+    }
+   ],
+   "status": "Official",
+   "barcode": null,
+   "date": "1994",
+   "disambiguation": "",
+   "id": "7ebc085d-c967-4aae-9902-438240a98c71",
+   "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+   "quality": "normal",
+   "text-representation": {
+    "script": "Latn",
+    "language": "eng"
+   },
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "position": 1,
+     "format-id": "3e9080b0-5e6c-34ab-bd15-f526b6306a64",
+     "id": "efa0d79a-4cc2-31ed-bb31-ae4ff4646181",
+     "track-count": 4,
+     "title": ""
+    }
+   ],
+   "country": "US",
+   "packaging-id": null,
+   "release-events": [
+    {
+     "area": {
+      "type-id": null,
+      "type": null,
+      "sort-name": "United States",
+      "disambiguation": "",
+      "id": "489ce91b-6658-3307-9877-795b68554c98",
+      "iso-3166-1-codes": [
+       "US"
+      ],
+      "name": "United States"
+     },
+     "date": "1994"
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "R12",
+     "label": {
+      "label-code": null,
+      "name": "[no label]",
+      "id": "157afde4-4bf5-4039-8ad2-5a15acc85176",
+      "disambiguation": "Special purpose label \u2013 white labels, self-published releases and other \u201cno label\u201d releases",
+      "sort-name": "[no label]",
+      "type": "Production",
+      "type-id": "a2426aab-2dd4-339c-b47d-b4923a241678"
+     }
+    }
+   ],
+   "asin": null,
+   "cover-art-archive": {
+    "count": 0,
+    "back": false,
+    "front": false,
+    "darkened": false,
+    "artwork": false
+   },
+   "title": "F.O.T.",
+   "packaging": null
+  },
+  {
+   "status": "Official",
+   "barcode": null,
+   "artist-credit": [
+    {
+     "name": "The Sample Choir",
+     "artist": {
+      "id": "fa0e2024-95ff-44b6-9a86-f0ab120b6a72",
+      "name": "Todd Edwards",
+      "disambiguation": "",
+      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+      "country": "US",
+      "type": "Person",
+      "sort-name": "Edwards, Todd"
+     },
+     "joinphrase": ""
+    }
+   ],
+   "disambiguation": "",
+   "date": "1994",
+   "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+   "id": "93e72e5f-de10-44c6-b519-c5f9a4a6250b",
+   "text-representation": {
+    "language": "eng",
+    "script": "Latn"
+   },
+   "quality": "normal",
+   "packaging-id": null,
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "position": 1,
+     "title": "",
+     "id": "3d295205-856c-4758-bfc2-e0bd4a7c3a58",
+     "track-count": 4,
+     "format-id": "3e9080b0-5e6c-34ab-bd15-f526b6306a64"
+    }
+   ],
+   "country": "US",
+   "release-events": [
+    {
+     "area": {
+      "type-id": null,
+      "type": null,
+      "sort-name": "United States",
+      "disambiguation": "",
+      "id": "489ce91b-6658-3307-9877-795b68554c98",
+      "name": "United States",
+      "iso-3166-1-codes": [
+       "US"
+      ]
+     },
+     "date": "1994"
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "NE 20104",
+     "label": {
+      "label-code": null,
+      "id": "adec4958-ac26-4422-be98-e6278e72e46c",
+      "name": "Nervous Records",
+      "disambiguation": "US techno/hip-hop",
+      "type-id": "7aaa37fe-2def-3476-b359-80245850062d",
+      "type": "Original Production",
+      "sort-name": "Nervous Records"
+     }
+    }
+   ],
+   "cover-art-archive": {
+    "count": 1,
+    "darkened": false,
+    "back": false,
+    "front": true,
+    "artwork": true
+   },
+   "asin": null,
+   "packaging": null,
+   "title": "Feelin' Lonely"
+  }
+ ],
+ "release-offset": 0,
+ "release-count": 85
+}

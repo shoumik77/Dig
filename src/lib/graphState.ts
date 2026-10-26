@@ -6,7 +6,7 @@ export interface NodeExpansion {
   loaded: number;
   total: number;
   nextCursor: string | null;
-  status: "idle" | "loading" | "done";
+  status: "idle" | "loading" | "done" | "error";
 }
 
 export interface GraphState {
@@ -24,7 +24,9 @@ export type GraphAction =
   | { type: "EXPAND_START"; id: string }
   | { type: "EXPAND"; id: string; page: ConnectionsPage }
   | { type: "LOAD_MORE"; id: string; page: ConnectionsPage }
-  | { type: "RESET" };
+  | { type: "EXPAND_FAIL"; id: string }
+  | { type: "RESET" }
+  | { type: "CLEAR" };
 
 export const initialGraphState: GraphState = {
   rootId: null,
@@ -46,10 +48,22 @@ function mergePage(
   const parentOf = { ...state.parentOf };
 
   for (const entity of page.entities) {
-    if (!(entity.id in nodes)) {
+    const existing = nodes[entity.id];
+    if (!existing) {
       parentOf[entity.id] = id;
+      nodes[entity.id] = entity;
+    } else {
+      // shallow-merge metadata: a sparse copy arriving later must not
+      // erase richer fields merged earlier
+      const merged = {
+        ...existing,
+        ...entity,
+        ...(existing.metadata || entity.metadata
+          ? { metadata: { ...existing.metadata, ...entity.metadata } }
+          : {}),
+      };
+      nodes[entity.id] = merged;
     }
-    nodes[entity.id] = entity;
   }
   for (const rel of page.relationships) {
     edges[rel.id] = rel;
@@ -114,6 +128,25 @@ export function graphReducer(state: GraphState, action: GraphAction): GraphState
       return mergePage(state, action.id, action.page, false);
     case "LOAD_MORE":
       return mergePage(state, action.id, action.page, true);
+
+    case "EXPAND_FAIL": {
+      const prev = state.expansions[action.id] ?? {
+        loaded: 0,
+        total: 0,
+        nextCursor: null,
+        status: "idle" as const,
+      };
+      return {
+        ...state,
+        expansions: {
+          ...state.expansions,
+          [action.id]: { ...prev, status: "error" },
+        },
+      };
+    }
+
+    case "CLEAR":
+      return initialGraphState;
 
     case "RESET": {
       if (!state.rootId) return initialGraphState;

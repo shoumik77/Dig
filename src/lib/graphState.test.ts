@@ -184,6 +184,123 @@ describe("graphReducer", () => {
     expect(edges.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("EXPAND_FAIL after EXPAND_START keeps counts and sets error", async () => {
+    let state = await initState();
+    const page = await firstPage(ROOT_ID);
+    state = graphReducer(state, { type: "EXPAND", id: ROOT_ID, page });
+    const before = state.expansions[ROOT_ID];
+    state = graphReducer(state, { type: "EXPAND_START", id: ROOT_ID });
+    state = graphReducer(state, { type: "EXPAND_FAIL", id: ROOT_ID });
+    expect(state.expansions[ROOT_ID]).toEqual({ ...before, status: "error" });
+  });
+
+  it("EXPAND_FAIL on an unexpanded id creates a zeroed error record", async () => {
+    let state = await initState();
+    state = graphReducer(state, { type: "EXPAND_FAIL", id: "release:deep-inside" });
+    expect(state.expansions["release:deep-inside"]).toEqual({
+      loaded: 0,
+      total: 0,
+      nextCursor: null,
+      status: "error",
+    });
+  });
+
+  it("EXPAND after EXPAND_FAIL recovers to a normal expansion", async () => {
+    let state = await initState();
+    state = graphReducer(state, { type: "EXPAND_START", id: ROOT_ID });
+    state = graphReducer(state, { type: "EXPAND_FAIL", id: ROOT_ID });
+    const page = await firstPage(ROOT_ID);
+    state = graphReducer(state, { type: "EXPAND", id: ROOT_ID, page });
+    expect(state.expansions[ROOT_ID].status).toBe("idle");
+    expect(state.expansions[ROOT_ID].loaded).toBe(DEFAULT_PAGE_SIZE);
+    state = graphReducer(state, { type: "EXPAND_FAIL", id: "release:deep-inside" });
+    const releasePage = await service.getConnections("release:deep-inside", {
+      limit: 50,
+    });
+    state = graphReducer(state, {
+      type: "EXPAND",
+      id: "release:deep-inside",
+      page: releasePage,
+    });
+    expect(state.expansions["release:deep-inside"].status).toBe("done");
+  });
+
+  it("CLEAR from an expanded state returns the initial state", async () => {
+    let state = await initState();
+    const page = await firstPage(ROOT_ID);
+    state = graphReducer(state, { type: "EXPAND", id: ROOT_ID, page });
+    state = graphReducer(state, { type: "SELECT", id: "release:deep-inside" });
+    state = graphReducer(state, { type: "CLEAR" });
+    expect(state).toEqual(initialGraphState);
+  });
+
+  it("LOAD_MORE with already-known entities does not duplicate nodes but still advances loaded", async () => {
+    let state = await initState();
+    const page1 = await firstPage(ROOT_ID);
+    state = graphReducer(state, { type: "EXPAND", id: ROOT_ID, page: page1 });
+
+    // Craft a second page that re-references entities already in the graph.
+    const known = page1.entities.slice(0, 2);
+    const page2: ConnectionsPage = {
+      entities: known,
+      relationships: known.map((e, i) => ({
+        id: `rel:extra-${i}`,
+        source: e.id,
+        target: ROOT_ID,
+        type: "released_on" as const,
+      })),
+      nextCursor: null,
+      total: page1.relationships.length + known.length,
+    };
+    const nodeCountBefore = Object.keys(state.nodes).length;
+    state = graphReducer(state, { type: "LOAD_MORE", id: ROOT_ID, page: page2 });
+
+    expect(Object.keys(state.nodes)).toHaveLength(nodeCountBefore);
+    expect(state.expansions[ROOT_ID].loaded).toBe(
+      page1.relationships.length + page2.relationships.length
+    );
+  });
+
+  it("merges metadata when a sparse copy of a known entity arrives", async () => {
+    let state = await initState();
+    const page1 = await firstPage(ROOT_ID);
+    state = graphReducer(state, { type: "EXPAND", id: ROOT_ID, page: page1 });
+
+    const existingId = page1.entities[0].id;
+    const sparse: ConnectionsPage = {
+      entities: [
+        { ...page1.entities[0], metadata: { country: "US" } },
+      ],
+      relationships: [],
+      nextCursor: null,
+      total: 0,
+    };
+    const before = state.nodes[existingId];
+    state = graphReducer(state, { type: "LOAD_MORE", id: ROOT_ID, page: sparse });
+    const merged = state.nodes[existingId];
+    expect(merged.metadata).toEqual({
+      ...before.metadata,
+      country: "US",
+    });
+
+    // incoming entity with no metadata at all keeps existing metadata
+    const noMeta: ConnectionsPage = {
+      entities: [
+        {
+          id: existingId,
+          name: page1.entities[0].name,
+          type: page1.entities[0].type,
+          provenance: page1.entities[0].provenance,
+        },
+      ],
+      relationships: [],
+      nextCursor: null,
+      total: 0,
+    };
+    state = graphReducer(state, { type: "LOAD_MORE", id: ROOT_ID, page: noMeta });
+    expect(state.nodes[existingId].metadata).toEqual(merged.metadata);
+  });
+
   it("RESET after multiple expansions leaves only the root", async () => {
     let state = await initState();
     const labelPage = await firstPage(ROOT_ID);

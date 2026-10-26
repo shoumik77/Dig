@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Disc3, Menu } from "lucide-react";
 import { useDigGraph } from "@/hooks/useDigGraph";
+import {
+  getGraphService,
+  type GraphMode,
+} from "@/lib/graphServiceRegistry";
 import { MusicGraph, type MusicGraphHandle } from "@/components/graph/MusicGraph";
 import { GraphControls } from "@/components/graph/GraphControls";
 import { MusicSearch } from "@/components/search/MusicSearch";
 import { EntityDetails } from "@/components/details/EntityDetails";
 import { MusicPlayer } from "@/components/player/MusicPlayer";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar, ModeSwitch } from "@/components/layout/Sidebar";
 import { ENTITY_COLORS } from "@/components/graph/graphStyles";
 import type { MusicEntity } from "@/types/music";
 
 const MAX_RECENT = 5;
 
 export function AppShell() {
+  const [mode, setMode] = useState<GraphMode>("demo");
+  const service = useMemo(() => getGraphService(mode), [mode]);
   const { state, selectNode, expand, loadMore, startFrom, reset, select } =
-    useDigGraph();
+    useDigGraph(service);
   const graphRef = useRef<MusicGraphHandle>(null);
   const [recent, setRecent] = useState<MusicEntity[]>([]);
   const [activeGenres, setActiveGenres] = useState<Set<string>>(new Set());
@@ -31,6 +37,7 @@ export function AppShell() {
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
     (window as unknown as Record<string, unknown>).__digState = state;
+    (window as unknown as Record<string, unknown>).__digMode = mode;
     (window as unknown as Record<string, unknown>).__digActions = {
       selectNode,
       loadMore,
@@ -38,8 +45,9 @@ export function AppShell() {
       startFrom,
       expand,
       select,
+      setMode,
     };
-  }, [state, selectNode, loadMore, reset, startFrom, expand, select]);
+  }, [state, mode, selectNode, loadMore, reset, startFrom, expand, select]);
 
   const selectedEntity = state.selectedId
     ? (state.nodes[state.selectedId] ?? null)
@@ -77,6 +85,14 @@ export function AppShell() {
     document.getElementById("dig-search-input")?.focus();
   }
 
+  function handleModeChange(next: GraphMode) {
+    if (next === mode) return;
+    setMode(next);
+    // ids and genre filters from the other provider are meaningless
+    setRecent([]);
+    if (next === "live") setActiveGenres(new Set());
+  }
+
   const sidebar = (
     <Sidebar
       recent={recent}
@@ -84,6 +100,9 @@ export function AppShell() {
       onSearchClick={focusSearch}
       activeGenres={activeGenres}
       onToggleGenre={toggleGenre}
+      mode={mode}
+      onModeChange={handleModeChange}
+      genresDisabled={mode === "live"}
     />
   );
 
@@ -108,8 +127,21 @@ export function AppShell() {
         activeGenres={activeGenres}
       />
       <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 lg:left-4 lg:translate-x-0">
-        <MusicSearch onSelect={(id) => void handleStartFrom(id)} />
+        <MusicSearch
+          key={mode}
+          service={service}
+          mode={mode}
+          onSelect={(id) => void handleStartFrom(id)}
+        />
       </div>
+      {mode === "live" && state.rootId === null && (
+        <div className="pointer-events-none absolute inset-x-0 top-16 z-0 text-center text-sm text-zinc-500">
+          <div>Search MusicBrainz to start digging</div>
+          <div className="mt-1 text-xs text-zinc-600">
+            Try a label like Strictly Rhythm, Locked On, or Roulé.
+          </div>
+        </div>
+      )}
       <GraphControls
         onZoomIn={() => graphRef.current?.zoomIn()}
         onZoomOut={() => graphRef.current?.zoomOut()}
@@ -133,6 +165,9 @@ export function AppShell() {
         </button>
         <Disc3 size={18} style={{ color: ENTITY_COLORS.label }} />
         <span className="text-sm font-semibold">Dig</span>
+        <div className="ml-auto w-36">
+          <ModeSwitch mode={mode} onModeChange={handleModeChange} />
+        </div>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] lg:grid-cols-[260px_1fr_340px]">
