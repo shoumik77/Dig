@@ -75,6 +75,7 @@ export interface MBLabel {
   area?: MBArea | null;
   disambiguation?: string;
   "life-span"?: MBLifeSpan;
+  aliases?: MBAlias[];
   score?: number;
 }
 
