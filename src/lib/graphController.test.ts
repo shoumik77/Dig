@@ -105,6 +105,26 @@ describe("graphController", () => {
     expect(getConnections).toHaveBeenCalledTimes(1);
   });
 
+  it("dedupes same-tick expands even when dispatched state lags (batching)", async () => {
+    // getState returns a frozen pre-dispatch snapshot, simulating React's
+    // batched useReducer where stateRef only updates after a render.
+    const d = deferred<ConnectionsPage>();
+    const { service, getConnections } = makeService({
+      getConnections: () => d.promise,
+    });
+    const state = initialGraphState;
+    const controller = createGraphController({
+      service,
+      dispatch: () => {},
+      getState: () => state,
+    });
+    const p1 = controller.expand("a");
+    const p2 = controller.expand("a");
+    d.resolve(page([], []));
+    await Promise.all([p1, p2]);
+    expect(getConnections).toHaveBeenCalledTimes(1);
+  });
+
   it("drops a response that arrives after reset", async () => {
     const d = deferred<ConnectionsPage>();
     const { service } = makeService({ getConnections: () => d.promise });
