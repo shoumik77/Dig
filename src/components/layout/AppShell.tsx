@@ -128,6 +128,7 @@ export function AppShell() {
       />
       <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 lg:left-4 lg:translate-x-0">
         <MusicSearch
+          key={mode}
           service={service}
           mode={mode}
           onSelect={(id) => void handleStartFrom(id)}

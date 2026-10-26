@@ -74,23 +74,6 @@ export function MusicSearch({
     ...results.releases.map((entity) => ({ entity, group: "Releases" as const })),
   ];
 
-  // reset when the mode changes
-  const prevMode = useRef(mode);
-  useEffect(() => {
-    if (prevMode.current === mode) return;
-    prevMode.current = mode;
-    const t = setTimeout(() => {
-      setQuery("");
-      setResults(EMPTY);
-      setOpen(false);
-      setLoading(false);
-      setError(null);
-      setSearched(false);
-      setCategory("label");
-    }, 0);
-    return () => clearTimeout(t);
-  }, [mode]);
-
   useEffect(() => {
     const q = query.trim();
     const timer = setTimeout(
