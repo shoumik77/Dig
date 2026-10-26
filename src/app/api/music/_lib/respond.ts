@@ -41,12 +41,23 @@ const STATUS_BY_KIND: Record<GraphErrorKind, number> = {
   timeout: 504,
 };
 
+// Fixed messages: internal error strings may embed upstream URLs.
+const MESSAGE_BY_KIND: Record<GraphErrorKind, string> = {
+  invalid: "Invalid request",
+  not_found: "Not found",
+  rate_limited: "MusicBrainz is rate limiting requests; try again shortly",
+  upstream: "MusicBrainz is unavailable",
+  network: "MusicBrainz is unavailable",
+  timeout: "MusicBrainz timed out",
+};
+
 export function fromError(err: unknown): Response {
   if (err instanceof GraphServiceError) {
+    const kind = STATUS_BY_KIND[err.kind] ? err.kind : "upstream";
     return fail(
-      STATUS_BY_KIND[err.kind] ?? 502,
-      err.kind,
-      err.message,
+      STATUS_BY_KIND[kind],
+      kind,
+      MESSAGE_BY_KIND[kind],
       err.retryAfterMs
     );
   }

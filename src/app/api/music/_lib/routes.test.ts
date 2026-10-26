@@ -136,6 +136,10 @@ describe("api/music routes", () => {
     );
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe("3");
+    let body = await res.json();
+    expect(body.error.message).toBe(
+      "MusicBrainz is rate limiting requests; try again shortly"
+    );
 
     service.getEntity.mockRejectedValue(
       new GraphServiceError("upstream", "mb exploded")
@@ -145,7 +149,10 @@ describe("api/music routes", () => {
       ctx("label", UUID)
     );
     expect(res.status).toBe(502);
-    expect((await res.json()).error.kind).toBe("upstream");
+    body = await res.json();
+    expect(body.error.kind).toBe("upstream");
+    // internal message/URLs are not forwarded
+    expect(body.error.message).toBe("MusicBrainz is unavailable");
   });
 
   it("unknown errors become a generic 500 with no internals", async () => {

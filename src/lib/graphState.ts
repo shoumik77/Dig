@@ -48,10 +48,22 @@ function mergePage(
   const parentOf = { ...state.parentOf };
 
   for (const entity of page.entities) {
-    if (!(entity.id in nodes)) {
+    const existing = nodes[entity.id];
+    if (!existing) {
       parentOf[entity.id] = id;
+      nodes[entity.id] = entity;
+    } else {
+      // shallow-merge metadata: a sparse copy arriving later must not
+      // erase richer fields merged earlier
+      const merged = {
+        ...existing,
+        ...entity,
+        ...(existing.metadata || entity.metadata
+          ? { metadata: { ...existing.metadata, ...entity.metadata } }
+          : {}),
+      };
+      nodes[entity.id] = merged;
     }
-    nodes[entity.id] = entity;
   }
   for (const rel of page.relationships) {
     edges[rel.id] = rel;
