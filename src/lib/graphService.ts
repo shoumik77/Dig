@@ -1,15 +1,23 @@
 import { mockMusic, type MockDataset } from "@/data/mockMusic";
-import type { ConnectionsPage, ConnectionsQuery, SearchResults } from "@/types/graph";
+import type {
+  ConnectionsPage,
+  ConnectionsQuery,
+  SearchQuery,
+  SearchResults,
+} from "@/types/graph";
 import type { MusicEntity, MusicRelationship } from "@/types/music";
 import { searchEntities } from "./search";
 
 export const DEFAULT_PAGE_SIZE = 12;
 
+export type GraphProviderId = "demo" | "musicbrainz";
+
 export interface GraphService {
+  readonly providerId: GraphProviderId;
   getEntity(id: string): Promise<MusicEntity | undefined>;
   getConnections(id: string, q?: ConnectionsQuery): Promise<ConnectionsPage>;
-  searchEntities(query: string): Promise<SearchResults>;
-  getDefaultRootId(): Promise<string>;
+  searchEntities(query: string, q?: SearchQuery): Promise<SearchResults>;
+  getDefaultRootId(): Promise<string | null>;
 }
 
 interface Connection {
@@ -43,6 +51,8 @@ export function createMockGraphService(data: MockDataset): GraphService {
   }
 
   return {
+    providerId: "demo",
+
     getEntity(id) {
       return Promise.resolve(entitiesById.get(id));
     },
@@ -64,8 +74,14 @@ export function createMockGraphService(data: MockDataset): GraphService {
       });
     },
 
-    searchEntities(query) {
-      return Promise.resolve(searchEntities(data, query));
+    searchEntities(query, q = {}) {
+      const results = searchEntities(data, query);
+      if (q.type) {
+        for (const key of ["labels", "artists", "releases"] as const) {
+          if (key !== `${q.type}s`) results[key] = [];
+        }
+      }
+      return Promise.resolve(results);
     },
 
     getDefaultRootId() {

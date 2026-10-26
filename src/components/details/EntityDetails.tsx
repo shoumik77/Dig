@@ -44,6 +44,8 @@ function groupLabel(type: RelationshipType, outgoing: boolean): string {
       return outgoing ? "Produced by" : "Produced";
     case "remixed_by":
       return outgoing ? "Remixed by" : "Remixed";
+    case "credited_to":
+      return outgoing ? "Credited to" : "Credited on";
   }
 }
 
