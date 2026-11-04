@@ -118,8 +118,10 @@ describe("normalize", () => {
     } as unknown as MBRelease;
     const page = releaseConnections(raw);
     expect(page.relationships).toHaveLength(1);
-    expect(page.entities).toHaveLength(1);
-    expect(page.entities[0].id).toBe(`mb:artist:${UUID_B}`);
+    // self entity (richer metadata) + the credited artist
+    expect(page.entities).toHaveLength(2);
+    expect(page.entities.map((e) => e.id)).toContain(`mb:artist:${UUID_B}`);
+    expect(page.entities.map((e) => e.id)).toContain(`mb:release:${UUID_A}`);
   });
 
   it("multiple distinct credits produce an edge each", () => {

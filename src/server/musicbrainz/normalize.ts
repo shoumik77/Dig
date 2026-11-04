@@ -222,6 +222,8 @@ export function normalizeRelease(raw: MBRelease): MusicEntity {
 export function releaseConnections(raw: MBRelease): ConnectionsPage {
   const releaseId = formatMbId("release", raw.id);
   const entities = new Map<string, MusicEntity>();
+  // richer self-entity (tracks, release-group ref) merges into the node
+  entities.set(releaseId, normalizeRelease(raw));
   const relationships = new Map<string, MusicRelationship>();
 
   for (const credit of raw["artist-credit"] ?? []) {
