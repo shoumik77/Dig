@@ -15,20 +15,30 @@ interface MusicSearchProps {
   mode?: GraphMode;
 }
 
+type GroupLabel = "Labels" | "Artists" | "Groups" | "Releases" | "Recordings";
+
 interface Row {
   entity: MusicEntity;
-  group: "Labels" | "Artists" | "Releases";
+  group: GroupLabel;
 }
 
-const EMPTY: SearchResults = { labels: [], artists: [], releases: [] };
+const EMPTY: SearchResults = {
+  label: [],
+  artist: [],
+  "release-group": [],
+  release: [],
+  recording: [],
+};
 
 const CATEGORIES: {
   type: EntityType;
-  label: "Labels" | "Artists" | "Releases";
+  label: GroupLabel;
 }[] = [
   { type: "label", label: "Labels" },
   { type: "artist", label: "Artists" },
+  { type: "release-group", label: "Groups" },
   { type: "release", label: "Releases" },
+  { type: "recording", label: "Recordings" },
 ];
 
 const MIN_LIVE_CHARS = 2;
@@ -68,11 +78,9 @@ export function MusicSearch({
   const rootRef = useRef<HTMLDivElement>(null);
   const requestId = useRef(0);
 
-  const rows: Row[] = [
-    ...results.labels.map((entity) => ({ entity, group: "Labels" as const })),
-    ...results.artists.map((entity) => ({ entity, group: "Artists" as const })),
-    ...results.releases.map((entity) => ({ entity, group: "Releases" as const })),
-  ];
+  const rows: Row[] = CATEGORIES.flatMap((c) =>
+    results[c.type].map((entity) => ({ entity, group: c.label }))
+  );
 
   useEffect(() => {
     const q = query.trim();
@@ -170,9 +178,9 @@ export function MusicSearch({
   const trimmed = query.trim();
   const showDropdown = open && trimmed.length > 0;
   const tooShort = live && trimmed.length > 0 && trimmed.length < MIN_LIVE_CHARS;
-  const groups: ("Labels" | "Artists" | "Releases")[] = live
+  const groups: GroupLabel[] = live
     ? [CATEGORIES.find((c) => c.type === category)!.label]
-    : ["Labels", "Artists", "Releases"];
+    : CATEGORIES.map((c) => c.label);
 
   return (
     <div ref={rootRef} className="relative w-80 max-w-full">

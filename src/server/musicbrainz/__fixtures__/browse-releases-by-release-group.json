@@ -1,0 +1,120 @@
+{
+  "release-count": 24,
+  "release-offset": 0,
+  "releases": [
+    {
+      "id": "098060d4-ba3c-469d-88b0-08642261c7ab",
+      "title": "Discovery",
+      "status": "Official",
+      "date": "2001-03-12",
+      "country": "XE",
+      "artist-credit": [
+        {
+          "name": "Daft Punk",
+          "artist": {
+            "id": "056e4f3e-d505-4dad-8ec1-d04f521cbb56",
+            "name": "Daft Punk",
+            "sort-name": "Daft Punk",
+            "type": "Group",
+            "disambiguation": "French electronic duo",
+            "country": "FR"
+          }
+        }
+      ],
+      "label-info": [
+        {
+          "catalog-number": "724354278228",
+          "label": {
+            "label-code": 3098,
+            "name": "Virgin",
+            "id": "49b58bdb-3d74-40c6-956a-4c4b46115c9c",
+            "disambiguation": "worldwide imprint of Virgin Records Ltd. and all its subsidiaries",
+            "sort-name": "Virgin",
+            "type-id": "b6285b2a-3514-3d43-80df-fcf528824ded",
+            "type": "Imprint"
+          }
+        },
+        {
+          "catalog-number": "CDVXX 2940",
+          "label": {
+            "label-code": 3098,
+            "id": "49b58bdb-3d74-40c6-956a-4c4b46115c9c",
+            "name": "Virgin",
+            "disambiguation": "worldwide imprint of Virgin Records Ltd. and all its subsidiaries",
+            "type": "Imprint",
+            "type-id": "b6285b2a-3514-3d43-80df-fcf528824ded",
+            "sort-name": "Virgin"
+          }
+        }
+      ]
+    },
+    {
+      "id": "51467269-3122-3d7e-92b2-0f0a694d30c1",
+      "title": "Discovery",
+      "status": "Official",
+      "date": "2001-03-10",
+      "country": "JP",
+      "artist-credit": [
+        {
+          "name": "Daft Punk",
+          "artist": {
+            "id": "056e4f3e-d505-4dad-8ec1-d04f521cbb56",
+            "name": "Daft Punk",
+            "sort-name": "Daft Punk",
+            "type": "Group",
+            "disambiguation": "French electronic duo",
+            "country": "FR"
+          }
+        }
+      ],
+      "label-info": [
+        {
+          "label": {
+            "disambiguation": "worldwide imprint of Virgin Records Ltd. and all its subsidiaries",
+            "type-id": "b6285b2a-3514-3d43-80df-fcf528824ded",
+            "type": "Imprint",
+            "sort-name": "Virgin",
+            "label-code": 3098,
+            "id": "49b58bdb-3d74-40c6-956a-4c4b46115c9c",
+            "name": "Virgin"
+          },
+          "catalog-number": "VJCP-68283"
+        }
+      ]
+    },
+    {
+      "id": "ab5ca495-8983-41b9-86b4-46a981d173be",
+      "title": "Discovery",
+      "status": "Official",
+      "date": "2001-03-10",
+      "country": "JP",
+      "artist-credit": [
+        {
+          "name": "Daft Punk",
+          "artist": {
+            "id": "056e4f3e-d505-4dad-8ec1-d04f521cbb56",
+            "name": "Daft Punk",
+            "sort-name": "Daft Punk",
+            "type": "Group",
+            "disambiguation": "French electronic duo",
+            "country": "FR"
+          }
+        }
+      ],
+      "label-info": [
+        {
+          "catalog-number": "VJCP-68283",
+          "label": {
+            "id": "49b58bdb-3d74-40c6-956a-4c4b46115c9c",
+            "name": "Virgin",
+            "label-code": 3098,
+            "type-id": "b6285b2a-3514-3d43-80df-fcf528824ded",
+            "type": "Imprint",
+            "sort-name": "Virgin",
+            "disambiguation": "worldwide imprint of Virgin Records Ltd. and all its subsidiaries"
+          }
+        }
+      ]
+    }
+  ]
+}

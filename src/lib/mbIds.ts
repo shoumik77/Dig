@@ -3,7 +3,13 @@ import type { EntityType } from "@/types/music";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const MB_TYPES = new Set<EntityType>(["label", "artist", "release"]);
+const MB_TYPES = new Set<EntityType>([
+  "label",
+  "artist",
+  "release-group",
+  "release",
+  "recording",
+]);
 
 export function isValidMbid(s: string): boolean {
   return UUID_RE.test(s);

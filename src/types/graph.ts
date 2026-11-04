@@ -16,8 +16,4 @@ export interface SearchQuery {
   type?: EntityType;
 }
 
-export interface SearchResults {
-  labels: MusicEntity[];
-  artists: MusicEntity[];
-  releases: MusicEntity[];
-}
+export type SearchResults = Record<EntityType, MusicEntity[]>;

@@ -16,8 +16,13 @@ import type {
   MBArtistSearchResponse,
   MBLabel,
   MBLabelSearchResponse,
+  MBRecording,
+  MBRecordingSearchResponse,
   MBRelease,
   MBReleaseBrowseResponse,
+  MBReleaseGroup,
+  MBReleaseGroupBrowseResponse,
+  MBReleaseGroupSearchResponse,
   MBReleaseSearchResponse,
 } from "./types";
 
@@ -92,6 +97,26 @@ export function createMusicBrainzClient(deps: MusicBrainzClientDeps = {}) {
       );
     },
 
+    searchReleaseGroups(q: string, { limit, offset }: PageParams) {
+      return get<MBReleaseGroupSearchResponse>(
+        `/release-group?${searchParams({
+          query: escapeLucene(q),
+          limit,
+          offset,
+        })}`
+      );
+    },
+
+    searchRecordings(q: string, { limit, offset }: PageParams) {
+      return get<MBRecordingSearchResponse>(
+        `/recording?${searchParams({
+          query: escapeLucene(q),
+          limit,
+          offset,
+        })}`
+      );
+    },
+
     browseReleasesByLabel(mbid: string, { limit, offset }: PageParams) {
       return get<MBReleaseBrowseResponse>(
         `/release?${searchParams({
@@ -114,6 +139,28 @@ export function createMusicBrainzClient(deps: MusicBrainzClientDeps = {}) {
       );
     },
 
+    browseReleaseGroupsByArtist(mbid: string, { limit, offset }: PageParams) {
+      return get<MBReleaseGroupBrowseResponse>(
+        `/release-group?${searchParams({
+          artist: mbid,
+          inc: "artist-credits",
+          limit,
+          offset,
+        })}`
+      );
+    },
+
+    browseReleasesByReleaseGroup(mbid: string, { limit, offset }: PageParams) {
+      return get<MBReleaseBrowseResponse>(
+        `/release?${searchParams({
+          "release-group": mbid,
+          inc: "artist-credits+labels+media",
+          limit,
+          offset,
+        })}`
+      );
+    },
+
     lookupLabel(mbid: string) {
       return get<MBLabel>(`/label/${mbid}?${searchParams({})}`);
     },
@@ -127,7 +174,21 @@ export function createMusicBrainzClient(deps: MusicBrainzClientDeps = {}) {
     lookupRelease(mbid: string) {
       return get<MBRelease>(
         `/release/${mbid}?${searchParams({
-          inc: "artist-credits+labels+media",
+          inc: "artist-credits+labels+media+release-groups+recordings+isrcs",
+        })}`
+      );
+    },
+
+    lookupReleaseGroup(mbid: string) {
+      return get<MBReleaseGroup>(
+        `/release-group/${mbid}?${searchParams({ inc: "artist-credits" })}`
+      );
+    },
+
+    lookupRecording(mbid: string) {
+      return get<MBRecording>(
+        `/recording/${mbid}?${searchParams({
+          inc: "artist-credits+isrcs+releases",
         })}`
       );
     },

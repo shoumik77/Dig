@@ -9,6 +9,7 @@ import type {
   MusicEntity,
   MusicRelationship,
   RelationshipType,
+  ReleaseTrack,
 } from "@/types/music";
 
 interface EntityDetailsProps {
@@ -24,6 +25,11 @@ interface MetaField {
   label: string;
   get(meta: Record<string, unknown>): unknown;
   demoOnly?: boolean;
+}
+
+function formatLength(ms: number): string {
+  const total = Math.round(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
 const META_FIELDS: Record<MusicEntity["type"], MetaField[]> = {
@@ -43,6 +49,18 @@ const META_FIELDS: Record<MusicEntity["type"], MetaField[]> = {
     { label: "Description", get: (m) => m.disambiguation },
     { label: "Also known as", get: (m) => m.aliases },
   ],
+  "release-group": [
+    {
+      label: "Type",
+      get: (m) =>
+        [m.primaryType, ...((m.secondaryTypes as string[] | undefined) ?? [])]
+          .filter(Boolean)
+          .join(", ") || undefined,
+    },
+    { label: "First released", get: (m) => m.firstReleaseDate },
+    { label: "Credited artists", get: (m) => m.artistCredit },
+    { label: "Description", get: (m) => m.disambiguation },
+  ],
   release: [
     { label: "Date", get: (m) => m.date ?? m.year },
     { label: "Country", get: (m) => m.country },
@@ -50,6 +68,21 @@ const META_FIELDS: Record<MusicEntity["type"], MetaField[]> = {
     { label: "Format", get: (m) => m.format },
     { label: "Status", get: (m) => m.status },
     { label: "Credited artists", get: (m) => m.artistCredit },
+  ],
+  recording: [
+    {
+      label: "Length",
+      get: (m) => {
+        const ms = m.lengthMs as number | undefined;
+        return typeof ms === "number" && Number.isFinite(ms)
+          ? formatLength(ms)
+          : undefined;
+      },
+    },
+    { label: "ISRC", get: (m) => m.isrcs },
+    { label: "Credited artists", get: (m) => m.artistCredit },
+    { label: "Description", get: (m) => m.disambiguation },
+    { label: "Video", get: (m) => (m.video === true ? "Yes" : undefined) },
   ],
 };
 
@@ -66,6 +99,10 @@ function groupLabel(type: RelationshipType, outgoing: boolean): string {
       return outgoing ? "Remixed by" : "Remixed";
     case "credited_to":
       return outgoing ? "Credited to" : "Credited on";
+    case "version_of":
+      return outgoing ? "Version of" : "Versions";
+    case "appears_on":
+      return outgoing ? "Appears on" : "Tracks";
   }
 }
 
@@ -100,11 +137,18 @@ export function EntityDetails({
     entity.provenance === "verified" ? "MusicBrainz" : "demo data";
 
   // group touching relationships by (type, direction)
+  const meta = (entity.metadata ?? {}) as Record<string, unknown>;
+  const tracks = (
+    entity.type === "release" ? (meta.tracks as ReleaseTrack[] | undefined) : undefined
+  ) ?? [];
+
   const groups = new Map<string, { label: string; items: { rel: MusicRelationship; other: MusicEntity }[] }>();
   for (const rel of Object.values(state.edges)) {
     const outgoing = rel.source === entity.id;
     const incoming = rel.target === entity.id;
     if (!outgoing && !incoming) continue;
+    // the Tracklist section already lists these in order
+    if (incoming && rel.type === "appears_on" && tracks.length > 0) continue;
     const otherId = outgoing ? rel.target : rel.source;
     const other = state.nodes[otherId];
     if (!other) continue;
@@ -121,7 +165,6 @@ export function EntityDetails({
   );
 
   const verified = entity.provenance === "verified";
-  const meta = (entity.metadata ?? {}) as Record<string, unknown>;
   const metaFields = META_FIELDS[entity.type].filter(
     (f) => !(f.demoOnly && verified)
   );
@@ -195,6 +238,49 @@ export function EntityDetails({
           );
         })}
       </dl>
+
+      {/* tracklist (live releases) */}
+      {tracks.length > 0 && (
+        <div className="border-t border-border px-4 py-3">
+          <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+            Tracklist
+          </div>
+          {tracks.map((track) => {
+            const inGraph = Boolean(state.nodes[track.recordingId]);
+            const rowClass =
+              "flex w-full items-baseline gap-2 rounded px-1 py-1 text-left text-sm";
+            const label = (
+              <>
+                <span className="w-8 shrink-0 text-zinc-500">
+                  {track.number ?? track.position}
+                </span>
+                <span className="flex-1 truncate">{track.title}</span>
+                <span className="shrink-0 text-zinc-500">
+                  {track.lengthMs != null ? formatLength(track.lengthMs) : "—"}
+                </span>
+              </>
+            );
+            return inGraph ? (
+              <button
+                key={`${track.medium ?? 0}:${track.position}`}
+                type="button"
+                onClick={() => onSelectNode(track.recordingId)}
+                className={`${rowClass} text-zinc-300 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100`}
+              >
+                {label}
+              </button>
+            ) : (
+              <div
+                key={`${track.medium ?? 0}:${track.position}`}
+                className={`${rowClass} text-zinc-400`}
+              >
+                {label}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {verified && (
         <div className="border-t border-border px-4 py-2 text-[10px] text-zinc-500">
           Metadata retrieved from MusicBrainz. Artist credits are credits, not

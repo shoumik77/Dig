@@ -1,0 +1,87 @@
+{
+  "id": "60fa767a-d85d-4991-82bc-4294e0b11ae7",
+  "title": "One More Time",
+  "length": 320746,
+  "isrcs": [
+    "GBAHT1305744",
+    "GBDUW0000053"
+  ],
+  "video": false,
+  "disambiguation": "",
+  "first-release-date": "2000",
+  "artist-credit": [
+    {
+      "name": "Daft Punk",
+      "artist": {
+        "id": "056e4f3e-d505-4dad-8ec1-d04f521cbb56",
+        "name": "Daft Punk",
+        "sort-name": "Daft Punk",
+        "type": "Group",
+        "disambiguation": "French electronic duo",
+        "country": "FR"
+      }
+    }
+  ],
+  "releases": [
+    {
+      "id": "4a9e65ec-c732-40a2-b824-4ccb49751717",
+      "title": "One More Time",
+      "status": "Promotion",
+      "date": "2000",
+      "country": "GB",
+      "artist-credit": [
+        {
+          "name": "Daft Punk",
+          "artist": {
+            "id": "056e4f3e-d505-4dad-8ec1-d04f521cbb56",
+            "name": "Daft Punk",
+            "sort-name": "Daft Punk",
+            "type": "Group",
+            "disambiguation": "French electronic duo",
+            "country": "FR"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bd3bb36e-16c8-438f-850e-dfbf4d1478f0",
+      "title": "Discovery",
+      "status": "Official",
+      "date": "2001-02-26",
+      "country": "AU",
+      "artist-credit": [
+        {
+          "name": "Daft Punk",
+          "artist": {
+            "id": "056e4f3e-d505-4dad-8ec1-d04f521cbb56",
+            "name": "Daft Punk",
+            "sort-name": "Daft Punk",
+            "type": "Group",
+            "disambiguation": "French electronic duo",
+            "country": "FR"
+          }
+        }
+      ]
+    },
+    {
+      "id": "d073287b-d1bd-4f11-a933-a4386f8cf701",
+      "title": "Discovery",
+      "status": "Official",
+      "date": "2001-02-26",
+      "country": "FR",
+      "artist-credit": [
+        {
+          "name": "Daft Punk",
+          "artist": {
+            "id": "056e4f3e-d505-4dad-8ec1-d04f521cbb56",
+            "name": "Daft Punk",
+            "sort-name": "Daft Punk",
+            "type": "Group",
+            "disambiguation": "French electronic duo",
+            "country": "FR"
+          }
+        }
+      ]
+    }
+  ]
+}

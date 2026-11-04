@@ -4,13 +4,17 @@ import type { EntityType } from "@/types/music";
 export const ENTITY_COLORS: Record<EntityType, string> = {
   label: "#f5a524",
   artist: "#2dd4bf",
+  "release-group": "#fb7185",
   release: "#a78bfa",
+  recording: "#60a5fa",
 };
 
 export const ENTITY_LABELS: Record<EntityType, string> = {
   label: "Label",
   artist: "Artist",
+  "release-group": "Release group",
   release: "Release",
+  recording: "Recording",
 };
 
 const EDGE_COLOR = "#2a2a31";
@@ -55,12 +59,30 @@ export const cytoscapeStylesheet: StylesheetJson = [
     },
   },
   {
+    selector: "node.release-group",
+    style: {
+      shape: "round-rectangle",
+      width: 36,
+      height: 36,
+      "background-color": ENTITY_COLORS["release-group"],
+    },
+  },
+  {
     selector: "node.release",
     style: {
       shape: "ellipse",
       width: 30,
       height: 30,
       "background-color": ENTITY_COLORS.release,
+    },
+  },
+  {
+    selector: "node.recording",
+    style: {
+      shape: "ellipse",
+      width: 22,
+      height: 22,
+      "background-color": ENTITY_COLORS.recording,
     },
   },
   {

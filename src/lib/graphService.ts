@@ -5,7 +5,11 @@ import type {
   SearchQuery,
   SearchResults,
 } from "@/types/graph";
-import type { MusicEntity, MusicRelationship } from "@/types/music";
+import type {
+  EntityType,
+  MusicEntity,
+  MusicRelationship,
+} from "@/types/music";
 import { searchEntities } from "./search";
 
 export const DEFAULT_PAGE_SIZE = 12;
@@ -77,8 +81,8 @@ export function createMockGraphService(data: MockDataset): GraphService {
     searchEntities(query, q = {}) {
       const results = searchEntities(data, query);
       if (q.type) {
-        for (const key of ["labels", "artists", "releases"] as const) {
-          if (key !== `${q.type}s`) results[key] = [];
+        for (const key of Object.keys(results) as EntityType[]) {
+          if (key !== q.type) results[key] = [];
         }
       }
       return Promise.resolve(results);

@@ -1,0 +1,94 @@
+{
+  "release-group-count": 62,
+  "release-group-offset": 0,
+  "release-groups": [
+    {
+      "id": "0dbe79b7-38bc-3388-936b-119c78204534",
+      "title": "When the Night Is Over",
+      "primary-type": "Album",
+      "secondary-types": [],
+      "first-release-date": "1991",
+      "disambiguation": "",
+      "artist-credit": [
+        {
+          "name": "“Little” Louie Vega",
+          "joinphrase": " & ",
+          "artist": {
+            "id": "f275d9a5-3271-436b-8c32-806ec275e23c",
+            "name": "“Little” Louie Vega",
+            "sort-name": "Vega, “Little” Louie",
+            "type": "Person",
+            "disambiguation": "US house DJ/producer",
+            "country": "US"
+          }
+        },
+        {
+          "name": "Marc Anthony",
+          "artist": {
+            "id": "25607613-aceb-445a-8519-83a2ee0f8402",
+            "name": "Marc Anthony",
+            "sort-name": "Anthony, Marc",
+            "type": "Person",
+            "disambiguation": "Marco Antonio Muñiz, salsa and latin pop singer",
+            "country": "US"
+          }
+        }
+      ]
+    },
+    {
+      "id": "11555ba9-d4ab-42b1-b164-504e8182cd22",
+      "title": "Vega Records Compilation Vol. 1",
+      "secondary-types": [
+        "Compilation"
+      ],
+      "first-release-date": "2006-08",
+      "disambiguation": "",
+      "artist-credit": [
+        {
+          "name": "Louie Vega",
+          "artist": {
+            "id": "f275d9a5-3271-436b-8c32-806ec275e23c",
+            "name": "“Little” Louie Vega",
+            "sort-name": "Vega, “Little” Louie",
+            "type": "Person",
+            "disambiguation": "US house DJ/producer",
+            "country": "US"
+          }
+        }
+      ]
+    },
+    {
+      "id": "3329bc3e-7eaf-48bb-adec-1be6bf92e205",
+      "title": "Eclipse",
+      "primary-type": "Album",
+      "secondary-types": [],
+      "first-release-date": "2013-03-19",
+      "disambiguation": "",
+      "artist-credit": [
+        {
+          "name": "Louie Vega",
+          "joinphrase": " Presents ",
+          "artist": {
+            "id": "f275d9a5-3271-436b-8c32-806ec275e23c",
+            "name": "“Little” Louie Vega",
+            "sort-name": "Vega, “Little” Louie",
+            "type": "Person",
+            "disambiguation": "US house DJ/producer",
+            "country": "US"
+          }
+        },
+        {
+          "name": "Elements Of Life",
+          "artist": {
+            "id": "2a4929b0-3056-48ed-90f7-a0b58ab42329",
+            "name": "Elements of Life",
+            "sort-name": "Elements of Life",
+            "type": "Group",
+            "disambiguation": "New York-based collective led by Louie Vega",
+            "country": "US"
+          }
+        }
+      ]
+    }
+  ]
+}

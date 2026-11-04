@@ -18,7 +18,15 @@ export function GraphControls({ onZoomIn, onZoomOut, onFit, onReset }: GraphCont
   return (
     <>
       <div className="absolute bottom-4 left-4 flex flex-col gap-1.5 rounded bg-surface/90 px-3 py-2 text-xs text-zinc-400 border border-border">
-        {(["label", "artist", "release"] as EntityType[]).map((t) => (
+        {(
+          [
+            "label",
+            "artist",
+            "release-group",
+            "release",
+            "recording",
+          ] as EntityType[]
+        ).map((t) => (
           <div key={t} className="flex items-center gap-2">
             <span
               className="inline-block h-2.5 w-2.5 rounded-full"

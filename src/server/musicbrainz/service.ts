@@ -8,9 +8,14 @@ import {
   decodeCursor,
   normalizeArtist,
   normalizeLabel,
+  normalizeRecording,
   normalizeRelease,
+  normalizeReleaseGroup,
   normalizeSearch,
+  recordingConnections,
   releaseConnections,
+  releaseGroupsPage,
+  releasesByGroupPage,
   releasesPage,
 } from "./normalize";
 
@@ -42,6 +47,18 @@ export function createMusicBrainzServerService(
           await client.searchArtists(q, { limit, offset })
         );
       }
+      if (type === "release-group") {
+        return normalizeSearch(
+          "release-group",
+          await client.searchReleaseGroups(q, { limit, offset })
+        );
+      }
+      if (type === "recording") {
+        return normalizeSearch(
+          "recording",
+          await client.searchRecordings(q, { limit, offset })
+        );
+      }
       return normalizeSearch(
         "release",
         await client.searchReleases(q, { limit, offset })
@@ -57,6 +74,14 @@ export function createMusicBrainzServerService(
         const raw = await client.lookupArtist(mbid);
         return raw ? normalizeArtist(raw) : null;
       }
+      if (type === "release-group") {
+        const raw = await client.lookupReleaseGroup(mbid);
+        return raw ? normalizeReleaseGroup(raw) : null;
+      }
+      if (type === "recording") {
+        const raw = await client.lookupRecording(mbid);
+        return raw ? normalizeRecording(raw) : null;
+      }
       const raw = await client.lookupRelease(mbid);
       return raw ? normalizeRelease(raw) : null;
     },
@@ -64,15 +89,17 @@ export function createMusicBrainzServerService(
     async getConnections(type, mbid, { cursor, limit }) {
       const parentId = formatMbId(type, mbid);
 
-      if (type === "release") {
-        // Releases are single-page; any cursor is meaningless.
+      // Releases and recordings are single-page; any cursor is meaningless.
+      if (type === "release" || type === "recording") {
         if (cursor != null) {
           throw new GraphServiceError(
             "invalid",
-            "Releases have a single connections page"
+            `${type}s have a single connections page`
           );
         }
-        return releaseConnections(await client.lookupRelease(mbid));
+        return type === "release"
+          ? releaseConnections(await client.lookupRelease(mbid))
+          : recordingConnections(await client.lookupRecording(mbid));
       }
 
       let offset = 0;
@@ -87,10 +114,21 @@ export function createMusicBrainzServerService(
         offset = decoded;
       }
 
-      const raw =
-        type === "label"
-          ? await client.browseReleasesByLabel(mbid, { limit, offset })
-          : await client.browseReleasesByArtist(mbid, { limit, offset });
+      if (type === "artist") {
+        const raw = await client.browseReleaseGroupsByArtist(mbid, {
+          limit,
+          offset,
+        });
+        return releaseGroupsPage(parentId, raw, offset);
+      }
+      if (type === "release-group") {
+        const raw = await client.browseReleasesByReleaseGroup(mbid, {
+          limit,
+          offset,
+        });
+        return releasesByGroupPage(parentId, raw, offset);
+      }
+      const raw = await client.browseReleasesByLabel(mbid, { limit, offset });
       return releasesPage({ id: parentId, type }, raw, offset);
     },
   };

@@ -50,7 +50,7 @@ function makeService(overrides: Partial<GraphService> = {}) {
     getEntity: (id) => Promise.resolve(entity(id)),
     getConnections,
     searchEntities: () =>
-      Promise.resolve({ labels: [], artists: [], releases: [] } satisfies SearchResults),
+      Promise.resolve({ label: [], artist: [], "release-group": [], release: [], recording: [] } satisfies SearchResults),
     getDefaultRootId: () => Promise.resolve(null),
     ...rest,
   };
