@@ -1,105 +1,78 @@
 "use client";
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
+import { graphService, type GraphService } from "@/lib/graphService";
 import {
-  DEFAULT_PAGE_SIZE,
-  graphService,
-  type GraphService,
-} from "@/lib/graphService";
-import {
-  graphReducer,
-  initialGraphState,
-  type GraphAction,
-} from "@/lib/graphState";
+  createGraphController,
+  type GraphController,
+} from "@/lib/graphController";
+import { graphReducer, initialGraphState } from "@/lib/graphState";
 
 export function useDigGraph(service: GraphService = graphService) {
   const [state, rawDispatch] = useReducer(graphReducer, initialGraphState);
-  const requestToken = useRef(0);
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
 
-  const dispatch = useCallback((action: GraphAction) => {
-    if (action.type === "INIT_FROM" || action.type === "RESET") {
-      requestToken.current += 1;
-    }
-    rawDispatch(action);
-  }, []);
-
-  const expand = useCallback(
-    async (id: string) => {
-      const token = requestToken.current;
-      dispatch({ type: "EXPAND_START", id });
-      const page = await service.getConnections(id, {
-        limit: DEFAULT_PAGE_SIZE,
-      });
-      if (token !== requestToken.current) return;
-      dispatch({ type: "EXPAND", id, page });
-    },
-    [service, dispatch]
-  );
-
-  const loadMore = useCallback(
-    async (id: string) => {
-      const expansion = stateRef.current.expansions[id];
-      if (!expansion || !expansion.nextCursor || expansion.status === "loading") {
-        return;
-      }
-      const token = requestToken.current;
-      dispatch({ type: "EXPAND_START", id });
-      const page = await service.getConnections(id, {
-        cursor: expansion.nextCursor,
-        limit: DEFAULT_PAGE_SIZE,
-      });
-      if (token !== requestToken.current) return;
-      dispatch({ type: "LOAD_MORE", id, page });
-    },
-    [service, dispatch]
-  );
-
-  const selectNode = useCallback(
-    (id: string) => {
-      dispatch({ type: "SELECT", id });
-      if (!stateRef.current.expansions[id]) {
-        void expand(id);
-      }
-    },
-    [dispatch, expand]
-  );
-
-  const select = useCallback(
-    (id: string | null) => {
-      dispatch({ type: "SELECT", id });
-    },
-    [dispatch]
-  );
-
-  const startFrom = useCallback(
-    async (id: string) => {
-      const entity = await service.getEntity(id);
-      if (!entity) return;
-      dispatch({ type: "INIT_FROM", entity });
-      await expand(id);
-    },
-    [service, dispatch, expand]
-  );
-
-  const reset = useCallback(() => {
-    dispatch({ type: "RESET" });
-  }, [dispatch]);
+  const getState = useCallback(() => stateRef.current, []);
+  const controllerRef = useRef<GraphController | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    const controller = createGraphController({
+      service,
+      dispatch: rawDispatch,
+      getState,
+    });
+    controllerRef.current = controller;
     void (async () => {
-      const rootId = await service.getDefaultRootId();
-      if (cancelled) return;
-      await startFrom(rootId);
+      controller.clear();
+      const root = await service.getDefaultRootId();
+      if (cancelled || !root) return;
+      await controller.startFrom(root);
     })();
     return () => {
       cancelled = true;
+      controller.dispose();
+      controllerRef.current = null;
     };
-  }, [service, startFrom]);
+  }, [service, getState]);
 
-  return { state, selectNode, expand, loadMore, startFrom, reset, select };
+  const selectNode = useCallback((id: string) => {
+    controllerRef.current?.selectNode(id);
+  }, []);
+  const select = useCallback((id: string | null) => {
+    controllerRef.current?.select(id);
+  }, []);
+  const expand = useCallback(
+    (id: string) => controllerRef.current?.expand(id) ?? Promise.resolve(),
+    []
+  );
+  const loadMore = useCallback(
+    (id: string) => controllerRef.current?.loadMore(id) ?? Promise.resolve(),
+    []
+  );
+  const startFrom = useCallback(
+    (id: string) =>
+      controllerRef.current?.startFrom(id) ?? Promise.resolve(false),
+    []
+  );
+  const reset = useCallback(() => {
+    controllerRef.current?.reset();
+  }, []);
+  const clear = useCallback(() => {
+    controllerRef.current?.clear();
+  }, []);
+
+  return {
+    state,
+    selectNode,
+    select,
+    expand,
+    loadMore,
+    startFrom,
+    reset,
+    clear,
+  };
 }

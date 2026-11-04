@@ -1,4 +1,4 @@
-import type { MusicEntity, MusicRelationship } from "./music";
+import type { EntityType, MusicEntity, MusicRelationship } from "./music";
 
 export interface ConnectionsPage {
   entities: MusicEntity[];
@@ -10,6 +10,10 @@ export interface ConnectionsPage {
 export interface ConnectionsQuery {
   cursor?: string | null;
   limit?: number;
+}
+
+export interface SearchQuery {
+  type?: EntityType;
 }
 
 export interface SearchResults {

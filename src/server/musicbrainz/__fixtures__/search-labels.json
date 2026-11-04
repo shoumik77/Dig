@@ -1,0 +1,63 @@
+{
+ "created": "2026-10-26T20:33:01.053Z",
+ "count": 496,
+ "offset": 0,
+ "labels": [
+  {
+   "id": "29c1256a-d989-4035-a856-95d707e2082c",
+   "type": "Original Production",
+   "type-id": "7aaa37fe-2def-3476-b359-80245850062d",
+   "score": 100,
+   "name": "Strictly Rhythm",
+   "sort-name": "Strictly Rhythm",
+   "label-code": 2611,
+   "country": "US",
+   "area": {
+    "id": "489ce91b-6658-3307-9877-795b68554c98",
+    "type": "Country",
+    "type-id": "06dd0ae4-8c74-30bb-b43d-95dcedf961de",
+    "name": "United States",
+    "sort-name": "United States",
+    "life-span": {
+     "ended": null
+    }
+   },
+   "life-span": {
+    "begin": "1989",
+    "ended": null
+   }
+  },
+  {
+   "id": "194559a1-20d5-430c-8a5c-37a385b26f60",
+   "score": 76,
+   "name": "Strictly Rhythm UK",
+   "sort-name": "Strictly Rhythm UK",
+   "country": "GB",
+   "area": {
+    "id": "8a754a16-0027-3a29-b6d7-2b40ea0481ed",
+    "type": "Country",
+    "type-id": "06dd0ae4-8c74-30bb-b43d-95dcedf961de",
+    "name": "United Kingdom",
+    "sort-name": "United Kingdom",
+    "life-span": {
+     "ended": null
+    }
+   },
+   "life-span": {
+    "ended": null
+   }
+  },
+  {
+   "id": "763b6454-f132-4c33-b75e-405672c8b7f1",
+   "type": "Publisher",
+   "type-id": "e9ad53b0-e3d0-3885-a10b-8193d501338c",
+   "score": 72,
+   "name": "Strictly Rhythm Records",
+   "sort-name": "Strictly Rhythm Records",
+   "disambiguation": "former copyright holder for Strictly Rhythm",
+   "life-span": {
+    "ended": null
+   }
+  }
+ ]
+}

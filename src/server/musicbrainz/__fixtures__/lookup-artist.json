@@ -1,0 +1,77 @@
+{
+ "begin-area": {
+  "id": "5ce2147e-fc5d-4c21-8ae8-795f2b378483",
+  "name": "Bloomfield",
+  "type-id": null,
+  "disambiguation": "",
+  "type": null,
+  "sort-name": "Bloomfield"
+ },
+ "aliases": [
+  {
+   "ended": false,
+   "begin": null,
+   "end": null,
+   "primary": null,
+   "type-id": null,
+   "name": "T Edwards",
+   "sort-name": "T Edwards",
+   "type": null,
+   "locale": null
+  },
+  {
+   "sort-name": "T. Edwards",
+   "locale": null,
+   "type": null,
+   "name": "T. Edwards",
+   "primary": null,
+   "type-id": null,
+   "begin": null,
+   "end": null,
+   "ended": false
+  },
+  {
+   "ended": false,
+   "end": null,
+   "begin": null,
+   "type": null,
+   "locale": null,
+   "sort-name": "Todd 'The God' Edwards",
+   "type-id": null,
+   "primary": null,
+   "name": "Todd 'The God' Edwards"
+  }
+ ],
+ "disambiguation": "",
+ "ipis": [
+  "00340380985"
+ ],
+ "sort-name": "Edwards, Todd",
+ "id": "fa0e2024-95ff-44b6-9a86-f0ab120b6a72",
+ "isnis": [
+  "0000000372901660"
+ ],
+ "name": "Todd Edwards",
+ "life-span": {
+  "ended": false,
+  "begin": "1972-12-09",
+  "end": null
+ },
+ "area": {
+  "iso-3166-1-codes": [
+   "US"
+  ],
+  "sort-name": "United States",
+  "type": null,
+  "name": "United States",
+  "id": "489ce91b-6658-3307-9877-795b68554c98",
+  "disambiguation": "",
+  "type-id": null
+ },
+ "gender": "Male",
+ "gender-id": "36d3d30a-839d-3eda-8cb3-29be4384e4a9",
+ "country": "US",
+ "type": "Person",
+ "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+ "end-area": null
+}

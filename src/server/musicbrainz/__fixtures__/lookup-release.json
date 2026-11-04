@@ -1,0 +1,80 @@
+{
+ "label-info": [
+  {
+   "catalog-number": "SR 1200",
+   "label": {
+    "name": "Strictly Rhythm",
+    "disambiguation": "",
+    "type-id": "7aaa37fe-2def-3476-b359-80245850062d",
+    "label-code": 2611,
+    "sort-name": "Strictly Rhythm",
+    "type": "Original Production",
+    "id": "29c1256a-d989-4035-a856-95d707e2082c"
+   }
+  }
+ ],
+ "text-representation": {
+  "language": "eng",
+  "script": "Latn"
+ },
+ "status": "Official",
+ "id": "1129c562-2f3a-4220-9828-a753e03e91f0",
+ "date": "1989-07-10",
+ "release-events": [
+  {
+   "area": {
+    "type": null,
+    "sort-name": "United States",
+    "id": "489ce91b-6658-3307-9877-795b68554c98",
+    "name": "United States",
+    "disambiguation": "",
+    "iso-3166-1-codes": [
+     "US"
+    ],
+    "type-id": null
+   },
+   "date": "1989-07-10"
+  }
+ ],
+ "barcode": null,
+ "asin": null,
+ "disambiguation": "",
+ "country": "US",
+ "quality": "normal",
+ "media": [
+  {
+   "id": "1f23a0ab-5010-3069-ab3b-c3dafef57075",
+   "title": "",
+   "format-id": "3e9080b0-5e6c-34ab-bd15-f526b6306a64",
+   "format": "12\" Vinyl",
+   "track-count": 5,
+   "position": 1
+  }
+ ],
+ "title": "Feel the Rhythm of House",
+ "cover-art-archive": {
+  "artwork": true,
+  "count": 2,
+  "darkened": false,
+  "front": true,
+  "back": false
+ },
+ "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+ "packaging-id": null,
+ "packaging": null,
+ "artist-credit": [
+  {
+   "artist": {
+    "disambiguation": "",
+    "type-id": null,
+    "name": "Tylon Washington",
+    "country": null,
+    "id": "7160d072-a100-41c5-8482-00d20f273a19",
+    "sort-name": "Washington, Tylon",
+    "type": null
+   },
+   "joinphrase": "",
+   "name": "Tylon"
+  }
+ ]
+}

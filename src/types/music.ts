@@ -4,7 +4,8 @@ export type RelationshipType =
   | "released_on"
   | "performed_by"
   | "produced_by"
-  | "remixed_by";
+  | "remixed_by"
+  | "credited_to";
 
 export type Provenance = "demo" | "verified";
 
@@ -13,12 +14,18 @@ export interface LabelMetadata {
   location?: string;
   genres?: string[];
   aliases?: string[];
+  country?: string;
+  foundedDate?: string;
+  disambiguation?: string;
 }
 
 export interface ArtistMetadata {
   realName?: string;
   location?: string;
   aliases?: string[];
+  country?: string;
+  artistType?: string;
+  disambiguation?: string;
 }
 
 export interface ReleaseMetadata {
@@ -26,6 +33,10 @@ export interface ReleaseMetadata {
   catalogNumber?: string;
   format?: string;
   aliases?: string[];
+  date?: string;
+  country?: string;
+  status?: string;
+  artistCredit?: string;
 }
 
 export type EntityMetadata =
@@ -39,6 +50,11 @@ export interface MusicEntity {
   type: EntityType;
   metadata?: EntityMetadata;
   provenance: Provenance;
+  source?: {
+    provider: "musicbrainz";
+    id: string;
+    url: string;
+  };
 }
 
 export interface MusicRelationship {
