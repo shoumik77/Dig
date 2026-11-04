@@ -137,11 +137,18 @@ export function EntityDetails({
     entity.provenance === "verified" ? "MusicBrainz" : "demo data";
 
   // group touching relationships by (type, direction)
+  const meta = (entity.metadata ?? {}) as Record<string, unknown>;
+  const tracks = (
+    entity.type === "release" ? (meta.tracks as ReleaseTrack[] | undefined) : undefined
+  ) ?? [];
+
   const groups = new Map<string, { label: string; items: { rel: MusicRelationship; other: MusicEntity }[] }>();
   for (const rel of Object.values(state.edges)) {
     const outgoing = rel.source === entity.id;
     const incoming = rel.target === entity.id;
     if (!outgoing && !incoming) continue;
+    // the Tracklist section already lists these in order
+    if (incoming && rel.type === "appears_on" && tracks.length > 0) continue;
     const otherId = outgoing ? rel.target : rel.source;
     const other = state.nodes[otherId];
     if (!other) continue;
@@ -158,10 +165,6 @@ export function EntityDetails({
   );
 
   const verified = entity.provenance === "verified";
-  const meta = (entity.metadata ?? {}) as Record<string, unknown>;
-  const tracks = (
-    entity.type === "release" ? (meta.tracks as ReleaseTrack[] | undefined) : undefined
-  ) ?? [];
   const metaFields = META_FIELDS[entity.type].filter(
     (f) => !(f.demoOnly && verified)
   );
