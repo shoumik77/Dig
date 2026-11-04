@@ -64,7 +64,47 @@ describe("createMusicBrainzClient", () => {
     expect(urls[1]).toContain("/artist/mbid-2");
     expect(urls[1]).toContain("inc=aliases");
     expect(urls[2]).toContain("/release/mbid-3");
-    expect(urls[2]).toContain("inc=artist-credits%2Blabels%2Bmedia");
+    expect(urls[2]).toContain(
+      "inc=artist-credits%2Blabels%2Bmedia%2Brelease-groups%2Brecordings%2Bisrcs"
+    );
+  });
+
+  it("builds release-group and recording URLs", async () => {
+    const urls: string[] = [];
+    const fetchImpl = vi.fn<typeof fetch>((u) => {
+      urls.push(String(u));
+      return okJson({});
+    });
+    const client = createMusicBrainzClient({ fetchImpl });
+
+    const calls: Promise<unknown>[] = [
+      client.searchReleaseGroups("Discovery", { limit: 5, offset: 0 }),
+      client.searchRecordings("One More Time", { limit: 5, offset: 0 }),
+      client.browseReleaseGroupsByArtist("mbid-a", { limit: 3, offset: 6 }),
+      client.browseReleasesByReleaseGroup("mbid-g", { limit: 3, offset: 0 }),
+      client.lookupReleaseGroup("mbid-g"),
+      client.lookupRecording("mbid-r"),
+    ];
+    for (let i = 0; i < calls.length; i++) {
+      await vi.advanceTimersByTimeAsync(1000);
+      await calls[i];
+    }
+
+    expect(urls[0]).toContain("/release-group?");
+    expect(urls[0]).toContain("query=Discovery");
+    expect(urls[1]).toContain("/recording?");
+    expect(urls[1]).toContain("query=One+More+Time");
+    expect(urls[2]).toContain("/release-group?");
+    expect(urls[2]).toContain("artist=mbid-a");
+    expect(urls[2]).toContain("inc=artist-credits");
+    expect(urls[2]).toContain("offset=6");
+    expect(urls[3]).toContain("/release?");
+    expect(urls[3]).toContain("release-group=mbid-g");
+    expect(urls[3]).toContain("inc=artist-credits%2Blabels%2Bmedia");
+    expect(urls[4]).toContain("/release-group/mbid-g");
+    expect(urls[4]).toContain("inc=artist-credits");
+    expect(urls[5]).toContain("/recording/mbid-r");
+    expect(urls[5]).toContain("inc=artist-credits%2Bisrcs%2Breleases");
   });
 
   it("serves a repeated request from cache without a second fetch", async () => {

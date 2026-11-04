@@ -1,0 +1,241 @@
+{
+  "id": "eda082c7-33aa-4f13-95b8-0ae585f1b9d3",
+  "title": "Deep Inside",
+  "status": "Official",
+  "date": "1995",
+  "country": "DE",
+  "artist-credit": [
+    {
+      "name": "Hardrive",
+      "artist": {
+        "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+        "name": "Hardrive",
+        "sort-name": "Hardrive",
+        "type": "Person",
+        "disambiguation": "",
+        "country": null
+      }
+    }
+  ],
+  "label-info": [
+    {
+      "label": {
+        "type": null,
+        "sort-name": "ZYX Music",
+        "label-code": 6350,
+        "id": "6844efda-a451-431e-8cc1-48ab111b4711",
+        "name": "ZYX Music",
+        "type-id": null,
+        "disambiguation": ""
+      },
+      "catalog-number": "ZYX 8010-12"
+    }
+  ],
+  "media": [
+    {
+      "id": "54784040-21ef-3644-bfe9-7af8a8210fb6",
+      "position": 1,
+      "format": "12\" Vinyl",
+      "title": "",
+      "track-count": 6,
+      "track-offset": 0,
+      "tracks": [
+        {
+          "id": "f8e92d90-fd12-38ec-b126-cea58c5e9a6c",
+          "position": 1,
+          "number": "A1",
+          "title": "Deep Inside (the remix)",
+          "length": 475000,
+          "artist-credit": [
+            {
+              "name": "Hardrive",
+              "artist": {
+                "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                "name": "Hardrive",
+                "sort-name": "Hardrive",
+                "type": "Person",
+                "disambiguation": "",
+                "country": null
+              }
+            }
+          ],
+          "recording": {
+            "id": "fd919aca-c60b-492f-854e-eadc9391c619",
+            "title": "Deep Inside (the remix)",
+            "length": 475000,
+            "isrcs": [],
+            "video": false,
+            "disambiguation": "",
+            "first-release-date": "1995-10-31",
+            "artist-credit": [
+              {
+                "name": "Hardrive",
+                "artist": {
+                  "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                  "name": "Hardrive",
+                  "sort-name": "Hardrive",
+                  "type": "Person",
+                  "disambiguation": "",
+                  "country": null
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "20f3d154-1d5b-3477-be9a-46c7fef44385",
+          "position": 2,
+          "number": "A2",
+          "title": "Deep Inside",
+          "length": 391000,
+          "artist-credit": [
+            {
+              "name": "Hardrive",
+              "artist": {
+                "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                "name": "Hardrive",
+                "sort-name": "Hardrive",
+                "type": "Person",
+                "disambiguation": "",
+                "country": null
+              }
+            }
+          ],
+          "recording": {
+            "id": "007b774c-c030-41cd-b597-f672e929a63a",
+            "title": "Deep Inside",
+            "length": 392000,
+            "isrcs": [
+              "GBCEN0800532",
+              "USSR39300201"
+            ],
+            "video": false,
+            "disambiguation": "",
+            "first-release-date": "1993-06-30",
+            "artist-credit": [
+              {
+                "name": "Hardrive",
+                "artist": {
+                  "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                  "name": "Hardrive",
+                  "sort-name": "Hardrive",
+                  "type": "Person",
+                  "disambiguation": "",
+                  "country": null
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "6bf23e5e-b729-331e-9e10-eff8bc508e95",
+          "position": 3,
+          "number": "A3",
+          "title": "No Cure",
+          "length": 368000,
+          "artist-credit": [
+            {
+              "name": "Hardrive",
+              "artist": {
+                "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                "name": "Hardrive",
+                "sort-name": "Hardrive",
+                "type": "Person",
+                "disambiguation": "",
+                "country": null
+              }
+            }
+          ],
+          "recording": {
+            "id": "8ed89271-e206-40f5-b2d3-0f842a54aba7",
+            "title": "No Cure",
+            "length": 369000,
+            "isrcs": [],
+            "video": false,
+            "disambiguation": "",
+            "first-release-date": "1993-06-30",
+            "artist-credit": [
+              {
+                "name": "Hardrive",
+                "artist": {
+                  "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                  "name": "Hardrive",
+                  "sort-name": "Hardrive",
+                  "type": "Person",
+                  "disambiguation": "",
+                  "country": null
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "04a9f720-8fee-347e-a845-ac300c14c5b0",
+          "position": 4,
+          "number": "B1",
+          "title": "Just Believe",
+          "length": 354000,
+          "artist-credit": [
+            {
+              "name": "Hardrive",
+              "artist": {
+                "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                "name": "Hardrive",
+                "sort-name": "Hardrive",
+                "type": "Person",
+                "disambiguation": "",
+                "country": null
+              }
+            }
+          ],
+          "recording": {
+            "id": "c4e2a13c-0fc5-476c-b0cd-67904de3d273",
+            "title": "Just Believe",
+            "length": 354000,
+            "isrcs": [
+              "USSR39300203",
+              "USSR39316901"
+            ],
+            "video": false,
+            "disambiguation": "",
+            "first-release-date": "1993-06-30",
+            "artist-credit": [
+              {
+                "name": "Hardrive",
+                "artist": {
+                  "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                  "name": "Hardrive",
+                  "sort-name": "Hardrive",
+                  "type": "Person",
+                  "disambiguation": "",
+                  "country": null
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "release-group": {
+    "id": "73404337-56ff-4f20-b559-64c0dfab4a2f",
+    "title": "Deep Inside",
+    "primary-type": "EP",
+    "secondary-types": [],
+    "first-release-date": "1993-06-30",
+    "disambiguation": "",
+    "artist-credit": [
+      {
+        "name": "Hardrive",
+        "artist": {
+          "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+          "name": "Hardrive",
+          "sort-name": "Hardrive",
+          "type": "Person",
+          "disambiguation": "",
+          "country": null
+        }
+      }
+    ]
+  }
+}

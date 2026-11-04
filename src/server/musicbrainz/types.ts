@@ -44,13 +44,46 @@ export interface MBLabelInfo {
   label?: MBLabelRef | null;
 }
 
+export interface MBRecordingRef {
+  id: string;
+  title: string;
+  length?: number | null;
+  isrcs?: string[];
+  video?: boolean | null;
+  disambiguation?: string;
+  "first-release-date"?: string;
+  "artist-credit"?: MBArtistCredit[];
+}
+
+export interface MBTrack {
+  id?: string;
+  position?: number;
+  number?: string;
+  title: string;
+  length?: number | null;
+  "artist-credit"?: MBArtistCredit[];
+  recording?: MBRecordingRef;
+}
+
 export interface MBMedia {
   id?: string;
   title?: string;
   format?: string | null;
   "format-id"?: string | null;
   "track-count"?: number;
+  "track-offset"?: number;
   position?: number;
+  tracks?: MBTrack[];
+}
+
+export interface MBReleaseGroupRef {
+  id: string;
+  title: string;
+  "primary-type"?: string | null;
+  "secondary-types"?: string[];
+  "first-release-date"?: string;
+  disambiguation?: string;
+  "artist-credit"?: MBArtistCredit[];
 }
 
 export interface MBAlias {
@@ -110,6 +143,7 @@ export interface MBRelease {
   "artist-credit"?: MBArtistCredit[];
   "label-info"?: MBLabelInfo[];
   media?: MBMedia[];
+  "release-group"?: MBReleaseGroupRef;
   "release-events"?: { date?: string; area?: MBArea | null }[];
   "text-representation"?: { language?: string | null; script?: string | null };
   score?: number;
@@ -141,4 +175,49 @@ export interface MBReleaseBrowseResponse {
   "release-count": number;
   "release-offset": number;
   releases: MBRelease[];
+}
+
+export interface MBReleaseGroup {
+  id: string;
+  title: string;
+  "primary-type"?: string | null;
+  "primary-type-id"?: string | null;
+  "secondary-types"?: string[];
+  "first-release-date"?: string;
+  disambiguation?: string;
+  "artist-credit"?: MBArtistCredit[];
+  score?: number;
+}
+
+export interface MBRecording {
+  id: string;
+  title: string;
+  length?: number | null;
+  isrcs?: string[];
+  video?: boolean | null;
+  disambiguation?: string;
+  "first-release-date"?: string;
+  "artist-credit"?: MBArtistCredit[];
+  releases?: MBRelease[];
+  score?: number;
+}
+
+export interface MBReleaseGroupBrowseResponse {
+  "release-group-count": number;
+  "release-group-offset": number;
+  "release-groups": MBReleaseGroup[];
+}
+
+export interface MBReleaseGroupSearchResponse {
+  created?: string;
+  count: number;
+  offset: number;
+  "release-groups": MBReleaseGroup[];
+}
+
+export interface MBRecordingSearchResponse {
+  created?: string;
+  count: number;
+  offset: number;
+  recordings: MBRecording[];
 }

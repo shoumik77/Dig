@@ -1,0 +1,239 @@
+{
+  "created": "2026-11-04T01:36:13.199Z",
+  "count": 140,
+  "offset": 0,
+  "recordings": [
+    {
+      "id": "fcf35b2a-4790-4531-a6ba-732d3246a7d1",
+      "title": "Deep Inside (Deep Inside Remix)",
+      "length": 476000,
+      "isrcs": [
+        "USSR39539901"
+      ],
+      "first-release-date": "2015-04-17",
+      "score": 100,
+      "artist-credit": [
+        {
+          "name": "Hardrive",
+          "artist": {
+            "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+            "name": "Hardrive",
+            "sort-name": "Hardrive"
+          }
+        }
+      ],
+      "releases": [
+        {
+          "id": "56ad3c58-76b1-41dd-b830-f9f26bdc9cfd",
+          "title": "Deep Inside (Remixes)",
+          "status": "Official",
+          "date": "2015-05-01",
+          "country": "XW",
+          "artist-credit": [
+            {
+              "name": "Hardrive",
+              "artist": {
+                "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                "name": "Hardrive",
+                "sort-name": "Hardrive"
+              }
+            }
+          ],
+          "media": [
+            {
+              "id": "b607fcae-c9b0-36cd-bcab-51c71c025bd2",
+              "position": 1,
+              "format": "Digital Media",
+              "track": [
+                {
+                  "id": "5c9b7d18-71ff-4f51-bc1d-e25cda90c463",
+                  "number": "4",
+                  "title": "Deep Inside (Deep Inside remix)",
+                  "length": 476163
+                }
+              ],
+              "track-count": 8,
+              "track-offset": 3
+            }
+          ],
+          "release-group": {
+            "id": "73404337-56ff-4f20-b559-64c0dfab4a2f",
+            "title": "Deep Inside",
+            "primary-type": "EP",
+            "secondary-types": []
+          }
+        },
+        {
+          "id": "43dfb261-1b3e-42c1-9950-4275479488c8",
+          "title": "Deep Inside (Remixes)",
+          "status": "Official",
+          "date": "2015-04-17",
+          "country": "US",
+          "artist-credit": [
+            {
+              "name": "Hardrive",
+              "artist": {
+                "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+                "name": "Hardrive",
+                "sort-name": "Hardrive"
+              }
+            }
+          ],
+          "media": [
+            {
+              "id": "f57dd811-b6a7-3817-b16e-26b9d94a5826",
+              "position": 1,
+              "format": "Digital Media",
+              "track": [
+                {
+                  "id": "4b661c15-be9d-4a07-b9ad-faf631155fda",
+                  "number": "4",
+                  "title": "Deep Inside (Deep Inside Remix)",
+                  "length": 476000
+                }
+              ],
+              "track-count": 8,
+              "track-offset": 3
+            }
+          ],
+          "release-group": {
+            "id": "73404337-56ff-4f20-b559-64c0dfab4a2f",
+            "title": "Deep Inside",
+            "primary-type": "EP",
+            "secondary-types": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "a7d69ee5-2c0e-43b9-bde7-b0bbe14d37bc",
+      "title": "Deep Inside",
+      "length": 386386,
+      "disambiguation": "part of “Strictly House Classics” DJ-mix",
+      "first-release-date": "1998",
+      "score": 99,
+      "artist-credit": [
+        {
+          "name": "Hardrive",
+          "artist": {
+            "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+            "name": "Hardrive",
+            "sort-name": "Hardrive"
+          }
+        }
+      ],
+      "releases": [
+        {
+          "id": "06ad7fa1-0c00-4d35-bb8b-75f945ee2a78",
+          "title": "Strictly House Classics",
+          "status": "Official",
+          "date": "1998",
+          "country": "CA",
+          "artist-credit": [
+            {
+              "name": "Various Artists",
+              "artist": {
+                "id": "89ad4ac3-39f7-470e-963a-56509c546377",
+                "name": "Various Artists",
+                "sort-name": "Various Artists",
+                "disambiguation": "add compilations to this artist"
+              }
+            }
+          ],
+          "media": [
+            {
+              "id": "ddf903d0-6a78-3477-9f01-faab1920f971",
+              "position": 1,
+              "format": "CD",
+              "track": [
+                {
+                  "id": "31f00559-d030-361f-9879-50c692f438d9",
+                  "number": "4",
+                  "title": "Deep Inside",
+                  "length": 386386
+                }
+              ],
+              "track-count": 16,
+              "track-offset": 3
+            }
+          ],
+          "release-group": {
+            "id": "8445f8cc-8848-3e8f-bcf4-f463d85d270d",
+            "title": "Strictly House Classics",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Compilation",
+              "DJ-mix"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "8c44bb3c-22a6-4f5c-9b51-03e1eb4b0383",
+      "title": "Deep Inside",
+      "length": 162000,
+      "isrcs": [
+        "US23A9039094"
+      ],
+      "disambiguation": "part of “Apple Music Live: NYE 2025” DJ‐mix",
+      "first-release-date": "2024-12-31",
+      "score": 99,
+      "artist-credit": [
+        {
+          "name": "Hardrive",
+          "artist": {
+            "id": "bd7d6b2a-998b-429d-84a6-9d671c0e5794",
+            "name": "Hardrive",
+            "sort-name": "Hardrive"
+          }
+        }
+      ],
+      "releases": [
+        {
+          "id": "38d5c8a7-b725-4695-8bf2-57f370d8f763",
+          "title": "Apple Music Live: NYE 2025",
+          "status": "Official",
+          "date": "2024-12-31",
+          "country": "XW",
+          "artist-credit": [
+            {
+              "name": "Skepta",
+              "artist": {
+                "id": "38474d18-9204-4f60-a137-1fcc6750b869",
+                "name": "Skepta",
+                "sort-name": "Skepta"
+              }
+            }
+          ],
+          "media": [
+            {
+              "id": "e626a01a-c4ad-3d34-bba3-17377409c6d4",
+              "position": 1,
+              "format": "Digital Media",
+              "track": [
+                {
+                  "id": "91b3d5a0-e1bf-453d-a694-245af0b83849",
+                  "number": "9",
+                  "title": "Deep Inside",
+                  "length": 162000
+                }
+              ],
+              "track-count": 17,
+              "track-offset": 8
+            }
+          ],
+          "release-group": {
+            "id": "05521880-ea2a-49cb-a0c0-be1fc96ba64b",
+            "title": "Apple Music Live: NYE 2025",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Live",
+              "DJ-mix"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

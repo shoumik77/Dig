@@ -7,13 +7,22 @@ import type {
   LabelMetadata,
   MusicEntity,
   MusicRelationship,
+  RecordingMetadata,
+  ReleaseGroupMetadata,
   ReleaseMetadata,
+  ReleaseTrack,
 } from "@/types/music";
 import type {
   MBArtist,
+  MBArtistCredit,
   MBLabel,
+  MBRecording,
+  MBRecordingRef,
   MBRelease,
   MBReleaseBrowseResponse,
+  MBReleaseGroup,
+  MBReleaseGroupBrowseResponse,
+  MBReleaseGroupRef,
 } from "./types";
 
 export function edgeId(
@@ -109,6 +118,80 @@ export function normalizeArtist(raw: MBArtist): MusicEntity {
   };
 }
 
+function creditPhrase(credits?: MBArtistCredit[]): string | undefined {
+  const s = (credits ?? [])
+    .map((c) => `${c.name}${c.joinphrase ?? ""}`)
+    .join("");
+  return s || undefined;
+}
+
+export function normalizeReleaseGroup(
+  raw: MBReleaseGroup | MBReleaseGroupRef
+): MusicEntity {
+  const metadata = compact<ReleaseGroupMetadata>({
+    primaryType: raw["primary-type"] ?? undefined,
+    secondaryTypes: dedupe(raw["secondary-types"] ?? []),
+    firstReleaseDate: raw["first-release-date"] || undefined,
+    artistCredit: creditPhrase(raw["artist-credit"]),
+    disambiguation: raw.disambiguation || undefined,
+  });
+  return {
+    id: formatMbId("release-group", raw.id),
+    name: raw.title,
+    type: "release-group",
+    provenance: "verified",
+    source: sourceOf("release-group", raw.id),
+    ...(Object.keys(metadata).length ? { metadata } : {}),
+  };
+}
+
+export function normalizeRecording(
+  raw: MBRecording | MBRecordingRef
+): MusicEntity {
+  const metadata = compact<RecordingMetadata>({
+    lengthMs: raw.length ?? undefined,
+    isrcs: dedupe(raw.isrcs ?? []),
+    artistCredit: creditPhrase(raw["artist-credit"]),
+    disambiguation: raw.disambiguation || undefined,
+    video: raw.video === true ? true : undefined,
+  });
+  return {
+    id: formatMbId("recording", raw.id),
+    name: raw.title,
+    type: "recording",
+    provenance: "verified",
+    source: sourceOf("recording", raw.id),
+    ...(Object.keys(metadata).length ? { metadata } : {}),
+  };
+}
+
+function releaseTracks(raw: MBRelease): ReleaseTrack[] | undefined {
+  const media = raw.media ?? [];
+  const multi = media.length > 1;
+  const tracks: ReleaseTrack[] = [];
+  for (const m of [...media].sort(
+    (a, b) => (a.position ?? 0) - (b.position ?? 0)
+  )) {
+    for (const t of [...(m.tracks ?? [])].sort(
+      (a, b) => (a.position ?? 0) - (b.position ?? 0)
+    )) {
+      const recId = t.recording?.id;
+      if (!recId || !isValidMbid(recId)) continue;
+      tracks.push(
+        compact<ReleaseTrack>({
+          position: t.position ?? tracks.length + 1,
+          number: t.number || undefined,
+          title: t.title,
+          lengthMs: t.length ?? t.recording?.length ?? undefined,
+          recordingId: formatMbId("recording", recId),
+          medium: multi ? (m.position ?? undefined) : undefined,
+        })
+      );
+    }
+  }
+  return tracks.length ? tracks : undefined;
+}
+
 export function normalizeRelease(raw: MBRelease): MusicEntity {
   const formats = dedupe((raw.media ?? []).map((m) => m.format));
   const catalogNumber = (raw["label-info"] ?? [])
@@ -124,6 +207,7 @@ export function normalizeRelease(raw: MBRelease): MusicEntity {
     catalogNumber: catalogNumber ?? undefined,
     format: formats.length ? formats.join(", ") : undefined,
     artistCredit: artistCredit || undefined,
+    tracks: releaseTracks(raw),
   });
   return {
     id: formatMbId("release", raw.id),
@@ -166,6 +250,39 @@ export function releaseConnections(raw: MBRelease): ConnectionsPage {
       type: "released_on",
     };
     relationships.set(rel.id, rel);
+  }
+
+  const group = raw["release-group"];
+  if (group?.id && isValidMbid(group.id)) {
+    const groupId = formatMbId("release-group", group.id);
+    entities.set(groupId, normalizeReleaseGroup(group));
+    const rel: MusicRelationship = {
+      id: edgeId(releaseId, groupId, "version_of"),
+      source: releaseId,
+      target: groupId,
+      type: "version_of",
+    };
+    relationships.set(rel.id, rel);
+  }
+
+  // distinct recordings across all media (a recording may repeat)
+  const seenRecordings = new Set<string>();
+  for (const m of raw.media ?? []) {
+    for (const t of m.tracks ?? []) {
+      const rec = t.recording;
+      if (!rec?.id || !isValidMbid(rec.id)) continue;
+      const recId = formatMbId("recording", rec.id);
+      if (seenRecordings.has(recId)) continue;
+      seenRecordings.add(recId);
+      entities.set(recId, normalizeRecording(rec));
+      const rel: MusicRelationship = {
+        id: edgeId(recId, releaseId, "appears_on"),
+        source: recId,
+        target: releaseId,
+        type: "appears_on",
+      };
+      relationships.set(rel.id, rel);
+    }
   }
 
   return {
@@ -211,22 +328,145 @@ export function releasesPage(
   };
 }
 
+export function releaseGroupsPage(
+  parentArtistId: string,
+  raw: MBReleaseGroupBrowseResponse,
+  offset: number
+): ConnectionsPage {
+  const parentMbid = parseMbId(parentArtistId)?.mbid ?? parentArtistId;
+  const entities = new Map<string, MusicEntity>();
+  const relationships = new Map<string, MusicRelationship>();
+
+  for (const group of raw["release-groups"] ?? []) {
+    const entity = normalizeReleaseGroup(group);
+    entities.set(entity.id, entity);
+    const rel: MusicRelationship = {
+      id: edgeId(entity.id, parentArtistId, "credited_to"),
+      source: entity.id,
+      target: parentArtistId,
+      type: "credited_to",
+    };
+    relationships.set(rel.id, rel);
+  }
+
+  const total = raw["release-group-count"] ?? 0;
+  const next = offset + (raw["release-groups"]?.length ?? 0);
+  return {
+    entities: [...entities.values()],
+    relationships: [...relationships.values()],
+    nextCursor:
+      (raw["release-groups"]?.length ?? 0) > 0 && next < total
+        ? encodeCursor(parentMbid, next)
+        : null,
+    total,
+  };
+}
+
+export function releasesByGroupPage(
+  parentGroupId: string,
+  raw: MBReleaseBrowseResponse,
+  offset: number
+): ConnectionsPage {
+  const parentMbid = parseMbId(parentGroupId)?.mbid ?? parentGroupId;
+  const entities = new Map<string, MusicEntity>();
+  const relationships = new Map<string, MusicRelationship>();
+
+  for (const release of raw.releases ?? []) {
+    const entity = normalizeRelease(release);
+    entities.set(entity.id, entity);
+    const rel: MusicRelationship = {
+      id: edgeId(entity.id, parentGroupId, "version_of"),
+      source: entity.id,
+      target: parentGroupId,
+      type: "version_of",
+    };
+    relationships.set(rel.id, rel);
+  }
+
+  const total = raw["release-count"] ?? 0;
+  const next = offset + (raw.releases?.length ?? 0);
+  return {
+    entities: [...entities.values()],
+    relationships: [...relationships.values()],
+    nextCursor:
+      (raw.releases?.length ?? 0) > 0 && next < total
+        ? encodeCursor(parentMbid, next)
+        : null,
+    total,
+  };
+}
+
+export function recordingConnections(raw: MBRecording): ConnectionsPage {
+  const recordingId = formatMbId("recording", raw.id);
+  const entities = new Map<string, MusicEntity>();
+  const relationships = new Map<string, MusicRelationship>();
+
+  for (const credit of raw["artist-credit"] ?? []) {
+    const artist = credit.artist;
+    if (!artist?.id || !isValidMbid(artist.id)) continue;
+    const artistId = formatMbId("artist", artist.id);
+    entities.set(artistId, normalizeArtist(artist));
+    const rel: MusicRelationship = {
+      id: edgeId(recordingId, artistId, "credited_to"),
+      source: recordingId,
+      target: artistId,
+      type: "credited_to",
+    };
+    relationships.set(rel.id, rel);
+  }
+
+  // MusicBrainz caps the embedded releases list at 25 entries.
+  for (const release of raw.releases ?? []) {
+    if (!release?.id || !isValidMbid(release.id)) continue;
+    const releaseId = formatMbId("release", release.id);
+    entities.set(releaseId, normalizeRelease(release));
+    const rel: MusicRelationship = {
+      id: edgeId(recordingId, releaseId, "appears_on"),
+      source: recordingId,
+      target: releaseId,
+      type: "appears_on",
+    };
+    relationships.set(rel.id, rel);
+  }
+
+  return {
+    entities: [...entities.values()],
+    relationships: [...relationships.values()],
+    nextCursor: null,
+    total: relationships.size,
+  };
+}
+
 
 export function normalizeSearch(
   type: EntityType,
   raw: {
     labels?: MBLabel[];
     artists?: MBArtist[];
+    "release-groups"?: MBReleaseGroup[];
     releases?: MBRelease[];
+    recordings?: MBRecording[];
   }
 ): SearchResults {
-  const results: SearchResults = { labels: [], artists: [], releases: [] };
+  const results: SearchResults = {
+    label: [],
+    artist: [],
+    "release-group": [],
+    release: [],
+    recording: [],
+  };
   if (type === "label") {
-    results.labels = (raw.labels ?? []).map(normalizeLabel);
+    results.label = (raw.labels ?? []).map(normalizeLabel);
   } else if (type === "artist") {
-    results.artists = (raw.artists ?? []).map(normalizeArtist);
+    results.artist = (raw.artists ?? []).map(normalizeArtist);
+  } else if (type === "release-group") {
+    results["release-group"] = (raw["release-groups"] ?? []).map(
+      normalizeReleaseGroup
+    );
+  } else if (type === "recording") {
+    results.recording = (raw.recordings ?? []).map(normalizeRecording);
   } else {
-    results.releases = (raw.releases ?? []).map(normalizeRelease);
+    results.release = (raw.releases ?? []).map(normalizeRelease);
   }
   return results;
 }
