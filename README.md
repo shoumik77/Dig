@@ -100,8 +100,11 @@ Use the **Demo | Live** switch in the sidebar (or the mobile top bar).
 
 - Demo loads the Strictly Rhythm label and its fictional-but-plausible
   neighbourhood instantly. Entities carry `provenance: "demo"`.
+  Demo data has no release groups or recordings — those tabs/legend rows
+  render but stay empty in Demo mode.
 - Live starts empty with a prompt; nothing is fetched until you search.
-  The search box gets category tabs (Labels / Artists / Releases), a 300 ms
+  The search box gets category tabs
+  (Labels / Artists / Groups / Releases / Recordings), a 300 ms
   debounce, a 2-character minimum, and loading/empty/error rows with retry.
   Selecting a result makes it the graph root; expanding nodes walks real
   MusicBrainz data.
@@ -115,7 +118,7 @@ Use the **Demo | Live** switch in the sidebar (or the mobile top bar).
 
 | Endpoint | Params | Returns |
 | --- | --- | --- |
-| `GET /api/music/search` | `q` (1–200 chars, required), `type` = `label\|artist\|release` (required), `limit` (clamp 1–25, default 12) | `SearchResults` |
+| `GET /api/music/search` | `q` (1–200 chars, required), `type` = `label\|artist\|release-group\|release\|recording` (required), `limit` (clamp 1–25, default 12) | `SearchResults` |
 | `GET /api/music/entities/{type}/{mbid}` | — | `MusicEntity` |
 | `GET /api/music/entities/{type}/{mbid}/connections` | `cursor` (optional, `{mbid}:{offset}` — scoped to that entity), `limit` (clamp 1–25) | `ConnectionsPage` |
 
@@ -127,15 +130,27 @@ Successful responses send `Cache-Control: private, max-age=60`.
 
 ## Entity IDs & relationships
 
-Live ids look like `mb:label:{mbid}`, `mb:artist:{mbid}`, `mb:release:{mbid}`;
-demo ids are `label:strictly-rhythm` etc. Canonical stored edge directions:
+Five entity types: label, artist, release group, release, recording.
+Live ids look like `mb:label:{mbid}`, `mb:release-group:{mbid}`,
+`mb:recording:{uuid}` etc.; demo ids are `label:strictly-rhythm` etc.
+Graph colours: label `#f5a524`, artist `#2dd4bf`, release group `#fb7185`,
+release `#a78bfa`, recording `#60a5fa`. Canonical stored edge directions:
 
 - `released_on`: release → label
-- `credited_to`: release → artist
+- `credited_to`: release | release-group | recording → artist
+- `version_of`: release → release-group
+- `appears_on`: recording → release
 
 Edge ids are `rel:{source}->{target}-{type}`, and traversal works in both
-directions (expanding a label shows its releases; expanding a release shows
-its label and artists).
+directions. Expansion topology:
+
+| Expanded node | Connections returned |
+| --- | --- |
+| label | releases (`released_on`, paginated) |
+| artist | release groups (`credited_to`, paginated) |
+| release group | releases (`version_of`, paginated) |
+| release | release-group + artists + labels + recordings (single page) |
+| recording | artists + releases (single page; MusicBrainz caps the embedded releases list at 25) |
 
 **Artist credits vs production credits:** `credited_to` reflects MusicBrainz
 `artist-credit` — "credited as", not a producer/remixer/sample claim. The
@@ -144,10 +159,11 @@ Text-only credits without a MusicBrainz ID produce no node.
 
 ## Pagination
 
-Pages are 12 items. For label/artist expansion the cursor is `{mbid}:{offset}`
-and the offset advances by the **actual returned count**; `loaded` in state is
-a cursor position, not a count of new edges. Release expansion is single-page
-(everything arrives in one lookup; a cursor is rejected).
+Pages are 12 items. For label/artist/release-group expansion the cursor is
+`{mbid}:{offset}` and the offset advances by the **actual returned count**;
+`loaded` in state is a cursor position, not a count of new edges. Release and
+recording expansion are single-page (everything arrives in one lookup; a
+cursor is rejected).
 
 ## Rate limiting & caching (Live mode)
 
@@ -231,8 +247,9 @@ to a few items each).
 - Ring placement can overlap in dense regions; collision nudging only mitigates.
 - Live mode has no genre filter (MusicBrainz labels carry no usable genre
   tags here).
-- No release-group or recording entities yet; search returns the top 10 per
-  category.
+- Recording → releases is limited to the first 25 releases MusicBrainz
+  embeds in a recording lookup.
+- Search returns the top 10 per category.
 - Saved Crates, the player, and persistence are visual placeholders.
 - The rate limiter is single-process only — see the deployment caveat above.
 
@@ -240,7 +257,7 @@ to a few items each).
 
 - Shared rate limiter/cache across instances (e.g. Redis) before multi-instance
   deployment of Live mode
-- Release groups, recordings, and explicit producer/remixer relationships
-  from MusicBrainz relationship data
+- Explicit producer/remixer relationships from MusicBrainz
+  relationship (`*-rels`) data
 - Persisted graphs / saved crates
 - Real playback links per release
