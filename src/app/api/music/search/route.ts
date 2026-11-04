@@ -9,7 +9,11 @@ export async function GET(request: Request) {
   }
   const type = parseEntityType(url.searchParams.get("type"));
   if (!type) {
-    return fail(400, "invalid", "Query parameter 'type' must be label|artist|release");
+    return fail(
+      400,
+      "invalid",
+      "Query parameter 'type' must be label|artist|release-group|release|recording"
+    );
   }
   const limit = parseLimit(url.searchParams.get("limit"));
   try {

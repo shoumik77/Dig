@@ -69,7 +69,7 @@ describe("createMusicBrainzGraphService", () => {
 
   it("defaults search type to label and honors an explicit type", async () => {
     const fetchImpl = vi.fn<typeof fetch>(() =>
-      okEnvelope({ labels: [], artists: [], releases: [] })
+      okEnvelope({ label: [], artist: [], "release-group": [], release: [], recording: [] })
     );
     const svc = createMusicBrainzGraphService({ fetchImpl });
     await svc.searchEntities("hello");

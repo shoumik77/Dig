@@ -17,11 +17,21 @@ describe("mbIds", () => {
     expect(parseMbId(id)).toEqual({ type: "label", mbid: UUID });
     expect(parseMbId(`mb:artist:${UUID}`)?.type).toBe("artist");
     expect(parseMbId(`mb:release:${UUID}`)?.type).toBe("release");
+    expect(parseMbId(`mb:release-group:${UUID}`)).toEqual({
+      type: "release-group",
+      mbid: UUID,
+    });
+    expect(parseMbId(`mb:recording:${UUID}`)).toEqual({
+      type: "recording",
+      mbid: UUID,
+    });
   });
 
   it("rejects malformed ids", () => {
     expect(parseMbId("label:strictly-rhythm")).toBeNull();
     expect(parseMbId("mb:track:" + UUID)).toBeNull();
+    expect(parseMbId("mb:work:" + UUID)).toBeNull();
+    expect(parseMbId("mb:release_group:" + UUID)).toBeNull();
     expect(parseMbId("mb:label:not-a-uuid")).toBeNull();
     expect(parseMbId("mb:label:" + UUID + ":extra")).toBeNull();
     expect(parseMbId("")).toBeNull();
@@ -29,5 +39,11 @@ describe("mbIds", () => {
 
   it("builds entity URLs", () => {
     expect(mbUrl("label", UUID)).toBe(`https://musicbrainz.org/label/${UUID}`);
+    expect(mbUrl("release-group", UUID)).toBe(
+      `https://musicbrainz.org/release-group/${UUID}`
+    );
+    expect(mbUrl("recording", UUID)).toBe(
+      `https://musicbrainz.org/recording/${UUID}`
+    );
   });
 });

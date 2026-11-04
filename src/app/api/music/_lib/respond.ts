@@ -1,7 +1,13 @@
 import { GraphServiceError, type GraphErrorKind } from "@/lib/graphErrors";
 import type { EntityType } from "@/types/music";
 
-export const ENTITY_TYPES = new Set<string>(["label", "artist", "release"]);
+export const ENTITY_TYPES = new Set<string>([
+  "label",
+  "artist",
+  "release-group",
+  "release",
+  "recording",
+]);
 
 export function ok(data: unknown, init?: ResponseInit): Response {
   return Response.json(

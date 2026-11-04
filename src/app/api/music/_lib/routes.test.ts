@@ -23,7 +23,13 @@ function ctx(type: string, id: string) {
   return { params: Promise.resolve({ type, id }) };
 }
 
-const EMPTY: SearchResults = { labels: [], artists: [], releases: [] };
+const EMPTY: SearchResults = {
+  label: [],
+  artist: [],
+  "release-group": [],
+  release: [],
+  recording: [],
+};
 const ENTITY: MusicEntity = {
   id: `mb:label:${UUID}`,
   name: "Strictly Rhythm",
@@ -52,10 +58,26 @@ describe("api/music routes", () => {
     );
     expect(res.status).toBe(400);
     res = await searchGET(
-      new Request("http://localhost/api/music/search?q=x&type=foo")
+      new Request("http://localhost/api/music/search?q=x&type=work")
     );
     expect(res.status).toBe(400);
     expect((await res.json()).error.kind).toBe("invalid");
+  });
+
+  it("search accepts all five entity types", async () => {
+    service.search.mockResolvedValue(EMPTY);
+    for (const type of [
+      "label",
+      "artist",
+      "release-group",
+      "release",
+      "recording",
+    ]) {
+      const res = await searchGET(
+        new Request(`http://localhost/api/music/search?q=x&type=${type}`)
+      );
+      expect(res.status).toBe(200);
+    }
   });
 
   it("entity returns data or 404", async () => {
@@ -81,6 +103,17 @@ describe("api/music routes", () => {
       ctx("foo", UUID)
     );
     expect(res.status).toBe(400);
+    res = await entityGET(
+      new Request(`http://localhost/api/music/entities/work/${UUID}`),
+      ctx("work", UUID)
+    );
+    expect(res.status).toBe(400);
+    service.getEntity.mockResolvedValue(ENTITY);
+    res = await entityGET(
+      new Request(`http://localhost/api/music/entities/release-group/${UUID}`),
+      ctx("release-group", UUID)
+    );
+    expect(res.status).toBe(200);
     res = await entityGET(
       new Request("http://localhost/api/music/entities/label/nope"),
       ctx("label", "nope")
