@@ -1,0 +1,80 @@
+{
+  "id": 401133,
+  "title": "Deep Inside",
+  "year": 1993,
+  "uri": "https://www.discogs.com/master/401133-Hardrive-Deep-Inside",
+  "main_release": 20174,
+  "genres": [
+    "Electronic"
+  ],
+  "styles": [
+    "House",
+    "Deep House",
+    "Garage House"
+  ],
+  "num_for_sale": 227,
+  "lowest_price": 2.41,
+  "images": [
+    {
+      "type": "primary",
+      "uri": "https://i.discogs.com/mM5-Et4Pj3bXCSSmk9WIOJ7sby0FWVfO_65D6UPwSpc/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwMTc0/LTE0NzkxNTAxNTEt/NDIyMC5qcGVn.jpeg",
+      "resource_url": "https://i.discogs.com/mM5-Et4Pj3bXCSSmk9WIOJ7sby0FWVfO_65D6UPwSpc/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwMTc0/LTE0NzkxNTAxNTEt/NDIyMC5qcGVn.jpeg",
+      "uri150": "https://i.discogs.com/BMpFwF0lXppoBLctPSwuQRL6r6ZXbBgKiOyT_1uRZw4/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwMTc0/LTE0NzkxNTAxNTEt/NDIyMC5qcGVn.jpeg",
+      "width": 500,
+      "height": 500
+    },
+    {
+      "type": "secondary",
+      "uri": "https://i.discogs.com/0MMNh7qvQ1oTmsgNxU7BXG3-ZZOEgBF3irhLJNX3RQM/rs:fit/g:sm/q:90/h:600/w:589/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwMTc0/LTExOTAyOTI4MTEu/anBlZw.jpeg",
+      "resource_url": "https://i.discogs.com/0MMNh7qvQ1oTmsgNxU7BXG3-ZZOEgBF3irhLJNX3RQM/rs:fit/g:sm/q:90/h:600/w:589/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwMTc0/LTExOTAyOTI4MTEu/anBlZw.jpeg",
+      "uri150": "https://i.discogs.com/xxAm1bTnHvyvlcD7IYgGhDmMKGYrMArlyVCM7o4rLfY/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwMTc0/LTExOTAyOTI4MTEu/anBlZw.jpeg",
+      "width": 589,
+      "height": 600
+    }
+  ],
+  "videos": [
+    {
+      "uri": "https://www.youtube.com/watch?v=PyCJLXXibUI",
+      "title": "Hardrive - Deep Inside - 1993",
+      "description": "Hardrive - Deep Inside - 1993\nNo copyright Infringement Intended. \n\nAll content belongs to it's rightful owners.\nNot for monetary gain. For entertainment purposes only",
+      "duration": 391,
+      "embed": true
+    },
+    {
+      "uri": "https://www.youtube.com/watch?v=yF9jtkTip3E",
+      "title": "Hardrive | Just Believe",
+      "description": "Engineer – Erick \"More\" Morillo - Producer – \"Little\" Louie Vega*\nStrictly Rhythm – SR EP2WHITE Reissue, Remastered, Repress, White | 2020\nOriginally Released - Strictly Rhythm – SR EP2 | 1993\nVinyl Rips On This Channel Are Recorded From The Original \"12\"",
+      "duration": 355,
+      "embed": true
+    }
+  ],
+  "artists": [
+    {
+      "name": "Hardrive",
+      "anv": "",
+      "join": "",
+      "role": "",
+      "tracks": "",
+      "id": 16253,
+      "resource_url": "https://api.discogs.com/artists/16253",
+      "thumbnail_url": "https://i.discogs.com/vVvoWGWQoZ8kXNY-ZoEoLAhTuSs4geO1YXUXU42Net8/rs:fit/g:sm/q:90/h:332/w:267/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE2MjUz/LTE1MzQ1MDkwNjUt/NTI5NS5qcGVn.jpeg"
+    }
+  ],
+  "tracklist": [
+    {
+      "position": "A1",
+      "title": "Deep Inside",
+      "duration": "6:28"
+    },
+    {
+      "position": "A2",
+      "title": "No Cure",
+      "duration": "6:09"
+    },
+    {
+      "position": "B1",
+      "title": "Just Believe",
+      "duration": "5:54"
+    }
+  ]
+}
