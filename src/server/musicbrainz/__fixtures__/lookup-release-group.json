@@ -17,5 +17,27 @@
         "country": "FR"
       }
     }
+  ],
+  "relations": [
+    {
+      "type": "discogs",
+      "type-id": "99e550f3-5ab4-3110-b5b9-fe01d970b126",
+      "target-type": "url",
+      "direction": "forward",
+      "url": {
+        "id": "4e010437-92d1-42d8-a7d9-a439f1beda40",
+        "resource": "https://www.discogs.com/master/26647"
+      }
+    },
+    {
+      "type": "allmusic",
+      "type-id": "a50a1d20-2b20-4d2c-9a29-eb771dd78386",
+      "target-type": "url",
+      "direction": "forward",
+      "url": {
+        "id": "4e010437-92d1-42d8-a7d9-a439f1beda40",
+        "resource": "https://www.allmusic.com/album/mw0000119560"
+      }
+    }
   ]
 }

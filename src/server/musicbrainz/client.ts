@@ -162,26 +162,28 @@ export function createMusicBrainzClient(deps: MusicBrainzClientDeps = {}) {
     },
 
     lookupLabel(mbid: string) {
-      return get<MBLabel>(`/label/${mbid}?${searchParams({})}`);
+      return get<MBLabel>(
+        `/label/${mbid}?${searchParams({ inc: "url-rels" })}`
+      );
     },
 
     lookupArtist(mbid: string) {
       return get<MBArtist>(
-        `/artist/${mbid}?${searchParams({ inc: "aliases" })}`
+        `/artist/${mbid}?${searchParams({ inc: "aliases+url-rels" })}`
       );
     },
 
     lookupRelease(mbid: string) {
       return get<MBRelease>(
         `/release/${mbid}?${searchParams({
-          inc: "artist-credits+labels+media+release-groups+recordings+isrcs",
+          inc: "artist-credits+labels+media+release-groups+recordings+isrcs+url-rels",
         })}`
       );
     },
 
     lookupReleaseGroup(mbid: string) {
       return get<MBReleaseGroup>(
-        `/release-group/${mbid}?${searchParams({ inc: "artist-credits" })}`
+        `/release-group/${mbid}?${searchParams({ inc: "artist-credits+url-rels" })}`
       );
     },
 

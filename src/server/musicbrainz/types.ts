@@ -84,6 +84,15 @@ export interface MBReleaseGroupRef {
   "first-release-date"?: string;
   disambiguation?: string;
   "artist-credit"?: MBArtistCredit[];
+  relations?: MBRelation[];
+}
+
+export interface MBRelation {
+  type?: string;
+  "type-id"?: string;
+  "target-type"?: string;
+  direction?: string;
+  url?: { id?: string; resource?: string };
 }
 
 export interface MBAlias {
@@ -109,6 +118,7 @@ export interface MBLabel {
   disambiguation?: string;
   "life-span"?: MBLifeSpan;
   aliases?: MBAlias[];
+  relations?: MBRelation[];
   score?: number;
 }
 
@@ -125,6 +135,7 @@ export interface MBArtist {
   disambiguation?: string;
   "life-span"?: MBLifeSpan;
   aliases?: MBAlias[];
+  relations?: MBRelation[];
   score?: number;
 }
 
@@ -144,6 +155,7 @@ export interface MBRelease {
   "label-info"?: MBLabelInfo[];
   media?: MBMedia[];
   "release-group"?: MBReleaseGroupRef;
+  relations?: MBRelation[];
   "release-events"?: { date?: string; area?: MBArea | null }[];
   "text-representation"?: { language?: string | null; script?: string | null };
   score?: number;
@@ -186,6 +198,7 @@ export interface MBReleaseGroup {
   "first-release-date"?: string;
   disambiguation?: string;
   "artist-credit"?: MBArtistCredit[];
+  relations?: MBRelation[];
   score?: number;
 }
 

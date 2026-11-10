@@ -62,10 +62,10 @@ describe("createMusicBrainzClient", () => {
     expect(urls[0]).toContain("label=mbid-1");
     expect(urls[0]).toContain("inc=artist-credits%2Blabels%2Bmedia");
     expect(urls[1]).toContain("/artist/mbid-2");
-    expect(urls[1]).toContain("inc=aliases");
+    expect(urls[1]).toContain("inc=aliases%2Burl-rels");
     expect(urls[2]).toContain("/release/mbid-3");
     expect(urls[2]).toContain(
-      "inc=artist-credits%2Blabels%2Bmedia%2Brelease-groups%2Brecordings%2Bisrcs"
+      "inc=artist-credits%2Blabels%2Bmedia%2Brelease-groups%2Brecordings%2Bisrcs%2Burl-rels"
     );
   });
 
@@ -102,7 +102,7 @@ describe("createMusicBrainzClient", () => {
     expect(urls[3]).toContain("release-group=mbid-g");
     expect(urls[3]).toContain("inc=artist-credits%2Blabels%2Bmedia");
     expect(urls[4]).toContain("/release-group/mbid-g");
-    expect(urls[4]).toContain("inc=artist-credits");
+    expect(urls[4]).toContain("inc=artist-credits%2Burl-rels");
     expect(urls[5]).toContain("/recording/mbid-r");
     expect(urls[5]).toContain("inc=artist-credits%2Bisrcs%2Breleases");
   });

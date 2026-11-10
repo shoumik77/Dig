@@ -12,18 +12,21 @@ import type {
   ReleaseMetadata,
   ReleaseTrack,
 } from "@/types/music";
+import { parseDiscogsUrl } from "../discogs/discogsRef";
 import type {
   MBArtist,
   MBArtistCredit,
   MBLabel,
   MBRecording,
   MBRecordingRef,
+  MBRelation,
   MBRelease,
   MBReleaseBrowseResponse,
   MBReleaseGroup,
   MBReleaseGroupBrowseResponse,
   MBReleaseGroupRef,
 } from "./types";
+import type { DiscogsRef } from "@/types/music";
 
 export function edgeId(
   source: string,
@@ -79,6 +82,27 @@ function sourceOf(type: EntityType, mbid: string) {
   return { provider: "musicbrainz" as const, id: mbid, url: mbUrl(type, mbid) };
 }
 
+/** First Discogs url-rel on an MB entity, if any. */
+export function discogsRefOf(raw: {
+  relations?: MBRelation[];
+}): DiscogsRef | undefined {
+  for (const rel of raw.relations ?? []) {
+    if (rel.type !== "discogs" || rel["target-type"] !== "url") continue;
+    const resource = rel.url?.resource;
+    if (!resource) continue;
+    const parsed = parseDiscogsUrl(resource);
+    if (parsed) {
+      return { kind: parsed.kind, id: parsed.id, url: resource };
+    }
+  }
+  return undefined;
+}
+
+function refsOf(raw: { relations?: MBRelation[] }) {
+  const discogs = discogsRefOf(raw);
+  return discogs ? { refs: { discogs } } : {};
+}
+
 function aliasNames(raw?: { name?: string }[]): string[] | undefined {
   const names = dedupe((raw ?? []).map((a) => a.name));
   return names.length ? names : undefined;
@@ -97,6 +121,7 @@ export function normalizeLabel(raw: MBLabel): MusicEntity {
     type: "label",
     provenance: "verified",
     source: sourceOf("label", raw.id),
+    ...refsOf(raw),
     ...(Object.keys(metadata).length ? { metadata } : {}),
   };
 }
@@ -114,6 +139,7 @@ export function normalizeArtist(raw: MBArtist): MusicEntity {
     type: "artist",
     provenance: "verified",
     source: sourceOf("artist", raw.id),
+    ...refsOf(raw),
     ...(Object.keys(metadata).length ? { metadata } : {}),
   };
 }
@@ -141,6 +167,7 @@ export function normalizeReleaseGroup(
     type: "release-group",
     provenance: "verified",
     source: sourceOf("release-group", raw.id),
+    ...refsOf(raw),
     ...(Object.keys(metadata).length ? { metadata } : {}),
   };
 }
@@ -215,6 +242,7 @@ export function normalizeRelease(raw: MBRelease): MusicEntity {
     type: "release",
     provenance: "verified",
     source: sourceOf("release", raw.id),
+    ...refsOf(raw),
     ...(Object.keys(metadata).length ? { metadata } : {}),
   };
 }
