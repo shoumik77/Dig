@@ -9,13 +9,25 @@ const service = vi.hoisted(() => ({
   getConnections: vi.fn(),
 }));
 
+const discogs = vi.hoisted(() => ({
+  getEnrichment: vi.fn(),
+  getCapabilities: vi.fn(() => ({ discogs: true })),
+}));
+
 vi.mock("@/server/musicbrainz/service", () => ({
   musicBrainzServerService: service,
+}));
+
+vi.mock("@/server/discogs/service", () => ({
+  getEnrichment: discogs.getEnrichment,
+  getCapabilities: discogs.getCapabilities,
 }));
 
 import { GET as searchGET } from "../search/route";
 import { GET as entityGET } from "../entities/[type]/[id]/route";
 import { GET as connectionsGET } from "../entities/[type]/[id]/connections/route";
+import { GET as enrichGET } from "../enrich/[type]/[id]/route";
+import { GET as capabilitiesGET } from "../capabilities/route";
 
 const UUID = "29c1256a-d989-4035-a856-95d707e2082c";
 
@@ -198,5 +210,64 @@ describe("api/music routes", () => {
     const body = await res.json();
     expect(body.error.kind).toBe("upstream");
     expect(JSON.stringify(body)).not.toContain("secret internals");
+  });
+
+  it("capabilities returns the discogs flag", async () => {
+    const res = await capabilitiesGET();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, data: { discogs: true } });
+  });
+
+  it("enrich returns enrichment or null", async () => {
+    const enrichment = { kind: "release", id: 1, url: "u" };
+    discogs.getEnrichment.mockResolvedValue(enrichment);
+    let res = await enrichGET(
+      new Request(`http://localhost/api/music/enrich/release/${UUID}`),
+      ctx("release", UUID)
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, data: enrichment });
+    expect(discogs.getEnrichment).toHaveBeenCalledWith(`mb:release:${UUID}`);
+
+    discogs.getEnrichment.mockResolvedValue(null);
+    res = await enrichGET(
+      new Request(`http://localhost/api/music/enrich/label/${UUID}`),
+      ctx("label", UUID)
+    );
+    expect(await res.json()).toEqual({ ok: true, data: null });
+  });
+
+  it("enrich returns null for recordings without calling the service", async () => {
+    discogs.getEnrichment.mockClear();
+    const res = await enrichGET(
+      new Request(`http://localhost/api/music/enrich/recording/${UUID}`),
+      ctx("recording", UUID)
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, data: null });
+    expect(discogs.getEnrichment).not.toHaveBeenCalled();
+  });
+
+  it("enrich 400s on bad type/id and maps service errors", async () => {
+    let res = await enrichGET(
+      new Request(`http://localhost/api/music/enrich/work/${UUID}`),
+      ctx("work", UUID)
+    );
+    expect(res.status).toBe(400);
+    res = await enrichGET(
+      new Request("http://localhost/api/music/enrich/label/nope"),
+      ctx("label", "nope")
+    );
+    expect(res.status).toBe(400);
+
+    discogs.getEnrichment.mockRejectedValue(
+      new GraphServiceError("rate_limited", "slow", { retryAfterMs: 2000 })
+    );
+    res = await enrichGET(
+      new Request(`http://localhost/api/music/enrich/release/${UUID}`),
+      ctx("release", UUID)
+    );
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("2");
   });
 });
