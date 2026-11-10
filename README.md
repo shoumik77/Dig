@@ -43,10 +43,17 @@ GraphService (provider-agnostic interface)
                 │
                 ▼
         MusicBrainz server service  src/server/musicbrainz/service.ts
-          normalize.ts · client.ts · scheduler.ts · cache.ts
+          normalize.ts · client.ts
+          src/server/http/  scheduler.ts · cache.ts (shared)
                 │
                 ▼
         MusicBrainz WS/2 (fixed origin, 1 req/s, cached)
+
+        Discogs service (enrichment, on selection only)
+          src/server/discogs/  config.ts · client.ts · normalize.ts
+                │
+                ▼
+        Discogs API (token auth, ~54 req/min, 1 h cache)
 ```
 
 ```
@@ -69,8 +76,11 @@ src/
 │                   mbIds.ts, musicBrainzGraphService.ts,
 │                   graphServiceRegistry.ts, search.ts
 ├── server/
-│   └── musicbrainz/  config.ts, client.ts, scheduler.ts, cache.ts,
-│                     normalize.ts, service.ts, types.ts, __fixtures__/
+│   ├── musicbrainz/  config.ts, client.ts, normalize.ts, service.ts,
+│   │                 types.ts, __fixtures__/
+│   ├── discogs/      config.ts, client.ts, normalize.ts, service.ts,
+│   │                 discogsRef.ts, types.ts, __fixtures__/
+│   └── http/         scheduler.ts, cache.ts (shared FIFO + LRU)
 └── types/          music.ts, graph.ts
 test/
 └── stubs/          server-only stub for vitest
@@ -111,8 +121,10 @@ Use the **Demo | Live** switch in the sidebar (or the mobile top bar).
 - Live entities carry `provenance: "verified"`, meaning **retrieved from
   MusicBrainz** — not independently fact-checked. Each gets a "MusicBrainz"
   badge linking back to the source entity page.
-- Genre chips are demo-only (MusicBrainz labels carry no usable genre tags
-  here) and are disabled in Live mode.
+- Genre chips work in both modes: fixed list in demo; in Live they are the
+  union of Discogs-enriched genres/styles on selected nodes (cap 24).
+  Clicking a chip dims nodes that have genres but match none — unenriched
+  nodes stay undimmed.
 
 ## API routes
 
@@ -121,6 +133,8 @@ Use the **Demo | Live** switch in the sidebar (or the mobile top bar).
 | `GET /api/music/search` | `q` (1–200 chars, required), `type` = `label\|artist\|release-group\|release\|recording` (required), `limit` (clamp 1–25, default 12) | `SearchResults` |
 | `GET /api/music/entities/{type}/{mbid}` | — | `MusicEntity` |
 | `GET /api/music/entities/{type}/{mbid}/connections` | `cursor` (optional, `{mbid}:{offset}` — scoped to that entity), `limit` (clamp 1–25) | `ConnectionsPage` |
+| `GET /api/music/enrich/{type}/{mbid}` | `type` = label\|artist\|release-group\|release | `DiscogsEnrichment \| null` |
+| `GET /api/music/capabilities` | — | `{ discogs: boolean }` |
 
 Envelope: `{ ok: true, data }` or `{ ok: false, error: { kind, message, retryAfterMs? } }`.
 Status mapping: 400 `invalid`, 404 `not_found`, 429 `rate_limited` (with a
@@ -173,7 +187,33 @@ at most one dispatch per second, identical in-flight URLs deduped,
 `Retry-After` (seconds or HTTP-date, capped at 30 s) or 1 s/2 s/4 s backoff,
 other 4xx never retried, queue capped at 50 (overflow → `rate_limited` →
 HTTP 429 to the client). Successful responses are cached in a 500-entry LRU
-with a 10-minute TTL (configurable).
+with a 10-minute TTL (configurable). The same scheduler is reused for
+Discogs (see below) with a 1100 ms minimum interval.
+
+## Discogs enrichment (Live mode, opt-in)
+
+When `DISCOGS_TOKEN` is set, selecting a MusicBrainz node lazily enriches it
+via `/api/music/enrich/{type}/{mbid}` — **never during graph expansion** — so
+the 60-requests/minute Discogs budget and ~10 s latency spikes stay off the
+walk path. The cross-reference comes from MusicBrainz's own `url-rels`
+(`relations[].type === "discogs"` → `refs.discogs` on the entity); no Discogs
+search is performed. If there is no Discogs link, no token, the type is
+`recording` (Discogs has no recording concept), or Discogs 404s, the route
+returns `null` and the details panel shows "No Discogs match" (hidden
+entirely when no token is configured, signalled via
+`/api/music/capabilities`).
+
+Enriched fields (all optional, never fabricated): cover art + thumbnail
+(hotlinked from the Discogs CDN), genres/styles, release credits
+(`extraartists` plus per-track rollups), community have/want, lowest
+for-sale price, YouTube videos (other hosts filtered out), and the
+artist/label profile — stripped of Discogs `[a=…]`/`[url=…]` markup and
+truncated to 600 chars. Genres/styles also merge into `metadata.genres`,
+which powers the live genre chips and the details "Genres" row.
+
+Discogs responses are cached 1 h (configurable) and spaced ≥1.1 s apart;
+data is provided by Discogs under their terms — "Data provided by Discogs"
+is shown in the panel.
 
 > **Deployment caveat:** the limiter is per Node process. On multi-instance or
 > serverless deployments it does **not** coordinate across instances and would
@@ -187,6 +227,9 @@ with a 10-minute TTL (configurable).
 | --- | --- | --- |
 | `MUSICBRAINZ_USER_AGENT` | `Dig/0.2.0 (https://github.com/shoumik77/Dig)` | Identifies Dig to MusicBrainz (their API policy requires a UA with contact info) |
 | `MUSICBRAINZ_CACHE_TTL_MS` | `600000` | TTL for cached upstream responses, ms |
+| `DISCOGS_TOKEN` | — | Personal access token from discogs.com/settings/developers; enables enrichment |
+| `DISCOGS_USER_AGENT` | `Dig/0.2.0 +https://github.com/shoumik77/Dig` | UA sent to Discogs (required by their API policy) |
+| `DISCOGS_CACHE_TTL_MS` | `3600000` | TTL for cached Discogs responses, ms |
 
 ## Decisions & tradeoffs
 
@@ -234,9 +277,10 @@ to a few items each).
 - `graphController`: async expansion, in-flight dedupe (including
   React-batched same-tick calls), stale-response dropping on
   reset/clear/startFrom/service-swap, failure → error + retry
-- `musicbrainz/cache`, `scheduler` (spacing, dedupe, retries, `Retry-After`,
-  timeout, exhaustion, queue overflow), `client` (URLs, Lucene escaping,
-  cache hits)
+- `http/cache`, `http/scheduler` (spacing, dedupe, retries, `Retry-After`,
+  timeout, exhaustion, queue overflow), `musicbrainz/client` and
+  `discogs/client` (URLs, headers, Lucene escaping, cache hits),
+  `discogs/normalize` (markup stripping, image pick, video filter)
 - `normalize`, `mbIds`, server `service`, route handlers
   (400/404/429/500/502 mapping, limit clamping)
 - `musicBrainzGraphService` (envelope → `GraphServiceError` mapping),
@@ -245,8 +289,8 @@ to a few items each).
 ## Known limitations
 
 - Ring placement can overlap in dense regions; collision nudging only mitigates.
-- Live mode has no genre filter (MusicBrainz labels carry no usable genre
-  tags here).
+- Live genre chips depend on Discogs enrichment — nothing shows until
+  nodes are selected, and nothing shows without `DISCOGS_TOKEN`.
 - Recording → releases is limited to the first 25 releases MusicBrainz
   embeds in a recording lookup.
 - Search returns the top 10 per category.
