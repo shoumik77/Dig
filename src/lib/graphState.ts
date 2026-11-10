@@ -1,6 +1,10 @@
 // Pure paginated graph state — no I/O, no service imports.
 import type { ConnectionsPage } from "@/types/graph";
-import type { MusicEntity, MusicRelationship } from "@/types/music";
+import type {
+  DiscogsEnrichment,
+  MusicEntity,
+  MusicRelationship,
+} from "@/types/music";
 
 export interface NodeExpansion {
   loaded: number;
@@ -25,6 +29,12 @@ export type GraphAction =
   | { type: "EXPAND"; id: string; page: ConnectionsPage }
   | { type: "LOAD_MORE"; id: string; page: ConnectionsPage }
   | { type: "EXPAND_FAIL"; id: string }
+  | {
+      type: "ENRICH";
+      id: string;
+      enrichment: DiscogsEnrichment | null;
+      fetchedAt: number;
+    }
   | { type: "RESET" }
   | { type: "CLEAR" };
 
@@ -141,6 +151,38 @@ export function graphReducer(state: GraphState, action: GraphAction): GraphState
         expansions: {
           ...state.expansions,
           [action.id]: { ...prev, status: "error" },
+        },
+      };
+    }
+
+    case "ENRICH": {
+      const existing = state.nodes[action.id];
+      if (!existing) return state;
+      // genres/styles become filterable metadata on every entity type
+      const genres = action.enrichment
+        ? [
+            ...new Set([
+              ...(action.enrichment.genres ?? []),
+              ...(action.enrichment.styles ?? []),
+            ]),
+          ]
+        : [];
+      const metadata =
+        genres.length > 0
+          ? { ...existing.metadata, genres }
+          : existing.metadata;
+      return {
+        ...state,
+        nodes: {
+          ...state.nodes,
+          [action.id]: {
+            ...existing,
+            ...(metadata !== existing.metadata ? { metadata } : {}),
+            enrichment: {
+              discogs: action.enrichment ?? undefined,
+              fetchedAt: action.fetchedAt,
+            },
+          },
         },
       };
     }

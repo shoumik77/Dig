@@ -52,6 +52,8 @@ function makeService(overrides: Partial<GraphService> = {}) {
     searchEntities: () =>
       Promise.resolve({ label: [], artist: [], "release-group": [], release: [], recording: [] } satisfies SearchResults),
     getDefaultRootId: () => Promise.resolve(null),
+    getEnrichment: () => Promise.resolve(null),
+    getCapabilities: () => Promise.resolve({ discogs: false }),
     ...rest,
   };
   return { service, getConnections };
@@ -255,5 +257,79 @@ describe("graphController", () => {
     expect(h1.getState().nodes["b"]).toBeUndefined();
     await h2.controller.expand("a");
     expect(h2.getState().expansions["a"]).toBeDefined();
+  });
+});
+
+describe("enrich", () => {
+  const ENRICHED = {
+    kind: "release" as const,
+    id: 1,
+    url: "u",
+    genres: ["House"],
+  };
+
+  function mbService(getEnrichment: GraphService["getEnrichment"]) {
+    return makeService({
+      providerId: "musicbrainz",
+      getEnrichment,
+    }).service;
+  }
+
+  it("fetches enrichment on select and merges genres", async () => {
+    const getEnrichment = vi.fn(() => Promise.resolve(ENRICHED));
+    const { controller, getState } = harness(mbService(getEnrichment));
+    await controller.startFrom("mb:release:x");
+    getState().nodes["mb:release:x"];
+    controller.select("mb:release:x");
+    await vi.waitFor(() =>
+      expect(getState().nodes["mb:release:x"].enrichment?.discogs).toEqual(
+        ENRICHED
+      )
+    );
+    expect(getState().nodes["mb:release:x"].metadata?.genres).toEqual([
+      "House",
+    ]);
+  });
+
+  it("does not enrich for non-musicbrainz providers or null selection", async () => {
+    const getEnrichment = vi.fn(() => Promise.resolve(ENRICHED));
+    const demo = makeService({ getEnrichment }).service;
+    const { controller } = harness(demo);
+    await controller.startFrom("label:x");
+    controller.select("label:x");
+    controller.select(null);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(getEnrichment).not.toHaveBeenCalled();
+  });
+
+  it("skips nodes that already have enrichment and dedupes in-flight", async () => {
+    const d = deferred<typeof ENRICHED>();
+    const getEnrichment = vi.fn(() => d.promise);
+    const { controller, getState } = harness(mbService(getEnrichment));
+    await controller.startFrom("mb:release:x");
+    void controller.enrich("mb:release:x");
+    void controller.enrich("mb:release:x");
+    expect(getEnrichment).toHaveBeenCalledTimes(1);
+    d.resolve(ENRICHED);
+    await vi.waitFor(() =>
+      expect(getState().nodes["mb:release:x"].enrichment).toBeDefined()
+    );
+    await controller.enrich("mb:release:x");
+    expect(getEnrichment).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the node untouched on error (retryable later)", async () => {
+    const getEnrichment = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValue(ENRICHED);
+    const { controller, getState } = harness(mbService(getEnrichment));
+    await controller.startFrom("mb:release:x");
+    await controller.enrich("mb:release:x");
+    expect(getState().nodes["mb:release:x"].enrichment).toBeUndefined();
+    await controller.enrich("mb:release:x");
+    expect(getState().nodes["mb:release:x"].enrichment?.discogs).toEqual(
+      ENRICHED
+    );
   });
 });

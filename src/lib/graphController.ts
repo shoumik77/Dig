@@ -16,6 +16,7 @@ export interface GraphController {
   startFrom(id: string): Promise<boolean>;
   selectNode(id: string): void;
   select(id: string | null): void;
+  enrich(id: string): Promise<void>;
   reset(): void;
   clear(): void;
   dispose(): void;
@@ -30,6 +31,7 @@ export function createGraphController(
   // Local in-flight guard: dispatched state may lag behind (React batching),
   // so expansions[id].status alone cannot dedupe same-tick calls.
   const inflight = new Set<string>();
+  const enriching = new Set<string>();
 
   function invalidate() {
     token += 1;
@@ -98,34 +100,62 @@ export function createGraphController(
     return true;
   }
 
+  async function enrich(id: string) {
+    // Enrichment is lazy and selection-driven — never on the expansion path.
+    if (service.providerId !== "musicbrainz") return;
+    if (getState().nodes[id]?.enrichment) return;
+    if (enriching.has(id)) return;
+    const t = token;
+    enriching.add(id);
+    try {
+      const enrichment = await service.getEnrichment(id);
+      if (t !== token) return;
+      dispatch({ type: "ENRICH", id, enrichment, fetchedAt: Date.now() });
+    } catch {
+      // leave the node untouched so a later selection retries
+    } finally {
+      enriching.delete(id);
+    }
+  }
+
+  function maybeEnrich(id: string | null) {
+    if (id && service.providerId === "musicbrainz") void enrich(id);
+  }
+
   return {
     expand,
     loadMore,
     startFrom,
+    enrich,
 
     selectNode(id) {
       dispatch({ type: "SELECT", id });
+      maybeEnrich(id);
       const status = getState().expansions[id]?.status;
       if (status === undefined || status === "error") void expand(id);
     },
 
     select(id) {
       dispatch({ type: "SELECT", id });
+      maybeEnrich(id);
     },
 
     reset() {
       inflight.clear();
+      enriching.clear();
       dispatch({ type: "RESET" });
     },
 
     clear() {
       inflight.clear();
+      enriching.clear();
       dispatch({ type: "CLEAR" });
     },
 
     dispose() {
       invalidate();
       inflight.clear();
+      enriching.clear();
     },
   };
 }

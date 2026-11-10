@@ -51,6 +51,7 @@ export interface RecordingMetadata {
   artistCredit?: string;
   disambiguation?: string;
   video?: boolean;
+  genres?: string[];
 }
 
 export interface ReleaseTrack {
