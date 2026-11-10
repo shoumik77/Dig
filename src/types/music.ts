@@ -5,6 +5,14 @@ export type EntityType =
   | "release"
   | "recording";
 
+export const ENTITY_TYPES: readonly EntityType[] = [
+  "label",
+  "artist",
+  "release-group",
+  "release",
+  "recording",
+];
+
 export type RelationshipType =
   | "released_on"
   | "performed_by"
