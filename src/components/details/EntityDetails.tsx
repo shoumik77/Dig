@@ -19,6 +19,7 @@ interface EntityDetailsProps {
   onExpand(id: string): void;
   onLoadMore(id: string): void;
   onClose(): void;
+  capabilities?: { discogs: boolean };
 }
 
 interface MetaField {
@@ -37,7 +38,7 @@ const META_FIELDS: Record<MusicEntity["type"], MetaField[]> = {
     { label: "Country", get: (m) => m.country },
     { label: "Founded", get: (m) => m.foundedDate ?? m.founded },
     { label: "Location", get: (m) => m.location, demoOnly: true },
-    { label: "Genres", get: (m) => m.genres, demoOnly: true },
+    { label: "Genres", get: (m) => m.genres },
     { label: "Description", get: (m) => m.disambiguation },
     { label: "Also known as", get: (m) => m.aliases },
   ],
@@ -114,6 +115,7 @@ export function EntityDetails({
   onExpand,
   onLoadMore,
   onClose,
+  capabilities,
 }: EntityDetailsProps) {
   const [crateHint, setCrateHint] = useState(false);
 
@@ -169,6 +171,16 @@ export function EntityDetails({
     (f) => !(f.demoOnly && verified)
   );
 
+  const discogsEnabled = capabilities?.discogs === true;
+  const discogs = entity.enrichment?.discogs;
+  const enrichFetched = entity.enrichment !== undefined;
+  const discogsLoading =
+    discogsEnabled && verified && !enrichFetched && entity.type !== "recording";
+  const showDiscogs =
+    discogsEnabled &&
+    entity.type !== "recording" &&
+    (discogs !== undefined || enrichFetched || discogsLoading);
+
   function metaValue(v: unknown): string | null {
     if (v === undefined || v === null || v === "") return null;
     if (Array.isArray(v)) return v.length ? v.join(", ") : null;
@@ -184,7 +196,18 @@ export function EntityDetails({
     <div className="flex h-full flex-col overflow-y-auto">
       {/* header */}
       <div className="flex items-start justify-between gap-2 p-4 pb-3">
-        <div>
+        <div className="min-w-0">
+          {discogs?.thumbUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={discogs.thumbUrl}
+              alt={entity.name}
+              width={72}
+              height={72}
+              referrerPolicy="no-referrer"
+              className="mb-2 h-[72px] w-[72px] rounded object-cover"
+            />
+          )}
           <span
             className="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
             style={{
@@ -209,6 +232,17 @@ export function EntityDetails({
               className="mt-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-400 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-200"
             >
               MusicBrainz <ExternalLink size={9} />
+            </a>
+          )}
+          {discogs && (
+            <a
+              href={discogs.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View on Discogs"
+              className="mt-1 ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-400 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-200"
+            >
+              Discogs <ExternalLink size={9} />
             </a>
           )}
         </div>
@@ -238,6 +272,107 @@ export function EntityDetails({
           );
         })}
       </dl>
+
+      {/* Discogs enrichment (live, on selection) */}
+      {showDiscogs && (
+        <div className="border-t border-border px-4 py-3">
+          <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+            From Discogs
+          </div>
+          {discogsLoading && !enrichFetched && (
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400" />
+              Loading Discogs…
+            </div>
+          )}
+          {enrichFetched && !discogs && (
+            <div className="text-xs italic text-zinc-600">No Discogs match</div>
+          )}
+          {discogs && (
+            <div className="flex flex-col gap-2.5">
+              {((discogs.genres?.length ?? 0) > 0 ||
+                (discogs.styles?.length ?? 0) > 0) && (
+                <div className="flex flex-wrap gap-1.5">
+                  {[...(discogs.genres ?? []), ...(discogs.styles ?? [])].map(
+                    (g) => (
+                      <span
+                        key={g}
+                        className="rounded-full border border-border px-2 py-0.5 text-[11px] text-zinc-300"
+                      >
+                        {g}
+                      </span>
+                    )
+                  )}
+                </div>
+              )}
+              {discogs.credits && discogs.credits.length > 0 && (
+                <div>
+                  {discogs.credits.map((c) => (
+                    <div key={`${c.role}-${c.name}`} className="text-sm">
+                      <span className="text-zinc-500">{c.role}</span>
+                      <span className="text-zinc-600"> — </span>
+                      <span className="text-zinc-200">{c.name}</span>
+                      {c.tracks && (
+                        <span className="text-zinc-600"> [{c.tracks}]</span>
+                      )}
+                    </div>
+                  ))}
+                  <div className="mt-0.5 text-[10px] text-zinc-600">
+                    Credits per Discogs contributors
+                  </div>
+                </div>
+              )}
+              {(discogs.community || discogs.numForSale != null) && (
+                <div className="text-xs text-zinc-500">
+                  {discogs.community && (
+                    <span>
+                      {discogs.community.have} have · {discogs.community.want}{" "}
+                      want
+                    </span>
+                  )}
+                  {discogs.numForSale != null && (
+                    <span>
+                      {discogs.community ? " · " : ""}
+                      {discogs.numForSale} for sale
+                      {discogs.lowestPrice != null &&
+                        ` from $${discogs.lowestPrice.toFixed(2)}`}
+                    </span>
+                  )}
+                </div>
+              )}
+              {discogs.videos && discogs.videos.length > 0 && (
+                <div>
+                  {discogs.videos.map((v) => (
+                    <a
+                      key={v.url}
+                      href={v.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-baseline gap-2 py-0.5 text-sm text-zinc-300 transition-colors duration-150 hover:text-zinc-100"
+                    >
+                      <span className="flex-1 truncate">{v.title}</span>
+                      {v.durationSec != null && (
+                        <span className="shrink-0 text-xs text-zinc-500">
+                          {formatLength(v.durationSec * 1000)}
+                        </span>
+                      )}
+                      <ExternalLink size={11} className="shrink-0 self-center text-zinc-500" />
+                    </a>
+                  ))}
+                </div>
+              )}
+              {discogs.profile && (
+                <p className="text-xs leading-relaxed text-zinc-400">
+                  {discogs.profile}
+                </p>
+              )}
+              <div className="text-[10px] text-zinc-600">
+                Data provided by Discogs
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* tracklist (live releases) */}
       {tracks.length > 0 && (

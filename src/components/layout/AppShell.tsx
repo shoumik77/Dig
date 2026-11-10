@@ -12,7 +12,7 @@ import { GraphControls } from "@/components/graph/GraphControls";
 import { MusicSearch } from "@/components/search/MusicSearch";
 import { EntityDetails } from "@/components/details/EntityDetails";
 import { MusicPlayer } from "@/components/player/MusicPlayer";
-import { Sidebar, ModeSwitch } from "@/components/layout/Sidebar";
+import { DEMO_GENRES, Sidebar, ModeSwitch } from "@/components/layout/Sidebar";
 import { ENTITY_COLORS } from "@/components/graph/graphStyles";
 import type { MusicEntity } from "@/types/music";
 
@@ -27,6 +27,31 @@ export function AppShell() {
   const [recent, setRecent] = useState<MusicEntity[]>([]);
   const [activeGenres, setActiveGenres] = useState<Set<string>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [capabilities, setCapabilities] = useState({ discogs: false });
+
+  useEffect(() => {
+    let cancelled = false;
+    service
+      .getCapabilities()
+      .then((caps) => {
+        if (!cancelled) setCapabilities(caps);
+      })
+      .catch(() => {
+        if (!cancelled) setCapabilities({ discogs: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [service]);
+
+  // genre chips: fixed list in demo; union of Discogs-enriched genres in live
+  const liveGenres = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of Object.values(state.nodes)) {
+      for (const g of e.metadata?.genres ?? []) set.add(g);
+    }
+    return [...set].sort().slice(0, 24);
+  }, [state.nodes]);
 
   const stateRef = useRef(state);
   useEffect(() => {
@@ -102,7 +127,19 @@ export function AppShell() {
       onToggleGenre={toggleGenre}
       mode={mode}
       onModeChange={handleModeChange}
-      genresDisabled={mode === "live"}
+      genres={mode === "live" ? liveGenres : DEMO_GENRES}
+      genreCaption={
+        mode === "live"
+          ? capabilities.discogs
+            ? "(from Discogs)"
+            : "(Discogs token not set)"
+          : "(demo only)"
+      }
+      genreEmptyText={
+        mode === "live" && capabilities.discogs
+          ? "Select nodes to load genres from Discogs"
+          : undefined
+      }
     />
   );
 
@@ -114,6 +151,7 @@ export function AppShell() {
       onExpand={(id) => void expand(id)}
       onLoadMore={(id) => void loadMore(id)}
       onClose={() => select(null)}
+      capabilities={capabilities}
     />
   );
 

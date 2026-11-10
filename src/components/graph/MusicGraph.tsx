@@ -10,7 +10,7 @@ import {
 import { ringPositions, type Position } from "./placement";
 import { cytoscapeStylesheet, ENTITY_COLORS } from "./graphStyles";
 import type { GraphState } from "@/lib/graphState";
-import type { EntityType, LabelMetadata } from "@/types/music";
+import type { EntityType } from "@/types/music";
 
 export interface MusicGraphHandle {
   fit(): void;
@@ -236,11 +236,12 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
           }
         }
 
-        // genre filter: dim label nodes with no overlapping genres
+        // genre filter: dim nodes that HAVE genres but match none;
+        // nodes without genre data stay undimmed
         if (activeGenres && activeGenres.size > 0) {
           for (const entity of Object.values(nodes)) {
-            if (entity.type !== "label") continue;
-            const genres = (entity.metadata as LabelMetadata | undefined)?.genres ?? [];
+            const genres = entity.metadata?.genres;
+            if (!genres?.length) continue;
             if (!genres.some((g) => activeGenres.has(g))) {
               cy.getElementById(entity.id).addClass("dimmed");
             }

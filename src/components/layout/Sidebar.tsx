@@ -5,7 +5,7 @@ import { ENTITY_COLORS } from "@/components/graph/graphStyles";
 import type { GraphMode } from "@/lib/graphServiceRegistry";
 import type { MusicEntity } from "@/types/music";
 
-const GENRES = ["House", "UK Garage", "French House", "Disco"];
+export const DEMO_GENRES = ["House", "UK Garage", "French House", "Disco"];
 
 const MODE_CAPTIONS: Record<GraphMode, string> = {
   demo: "Illustrative demo data",
@@ -49,7 +49,12 @@ interface SidebarProps {
   onToggleGenre(genre: string): void;
   mode: GraphMode;
   onModeChange(mode: GraphMode): void;
-  genresDisabled?: boolean;
+  /** chips to render — demo list in demo mode, Discogs-derived in live */
+  genres: string[];
+  /** small grey suffix on the Genres header, e.g. "(demo only)" */
+  genreCaption?: string;
+  /** shown when `genres` is empty */
+  genreEmptyText?: string;
 }
 
 export function Sidebar({
@@ -60,7 +65,9 @@ export function Sidebar({
   onToggleGenre,
   mode,
   onModeChange,
-  genresDisabled = false,
+  genres,
+  genreCaption,
+  genreEmptyText,
 }: SidebarProps) {
   return (
     <div className="flex h-full flex-col bg-surface">
@@ -128,32 +135,37 @@ export function Sidebar({
       <div className="px-4 py-3">
         <div className="mb-2 flex items-baseline gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
           Genres
-          {genresDisabled && (
+          {genreCaption && (
             <span className="normal-case tracking-normal text-zinc-600">
-              (demo only)
+              {genreCaption}
             </span>
           )}
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {GENRES.map((genre) => {
-            const active = activeGenres.has(genre);
-            return (
-              <button
-                key={genre}
-                type="button"
-                disabled={genresDisabled}
-                onClick={() => onToggleGenre(genre)}
-                className={`rounded-full border px-2.5 py-1 text-xs transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
-                  active
-                    ? "border-label text-label"
-                    : "border-border text-zinc-400 hover:bg-surface-2 hover:text-zinc-200"
-                }`}
-              >
-                {genre}
-              </button>
-            );
-          })}
-        </div>
+        {genres.length === 0 ? (
+          genreEmptyText && (
+            <div className="text-xs text-zinc-600">{genreEmptyText}</div>
+          )
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {genres.map((genre) => {
+              const active = activeGenres.has(genre);
+              return (
+                <button
+                  key={genre}
+                  type="button"
+                  onClick={() => onToggleGenre(genre)}
+                  className={`rounded-full border px-2.5 py-1 text-xs transition-colors duration-150 ${
+                    active
+                      ? "border-label text-label"
+                      : "border-border text-zinc-400 hover:bg-surface-2 hover:text-zinc-200"
+                  }`}
+                >
+                  {genre}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
