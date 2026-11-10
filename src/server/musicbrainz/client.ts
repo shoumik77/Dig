@@ -9,8 +9,8 @@ import {
   timeoutMs,
   userAgent,
 } from "./config";
-import { createLruCache, type LruCache } from "./cache";
-import { createRequestScheduler } from "./scheduler";
+import { createLruCache, type LruCache } from "../http/cache";
+import { createRequestScheduler } from "../http/scheduler";
 import type {
   MBArtist,
   MBArtistSearchResponse,
