@@ -1,6 +1,7 @@
 import type { StylesheetJson } from "cytoscape";
 import type { EntityType } from "@/types/music";
 
+/* keep in sync with the --color-* entity tokens in globals.css */
 export const ENTITY_COLORS: Record<EntityType, string> = {
   label: "#f5a524",
   artist: "#2dd4bf",
@@ -17,25 +18,30 @@ export const ENTITY_LABELS: Record<EntityType, string> = {
   recording: "Recording",
 };
 
-const EDGE_COLOR = "#2a2a31";
-const TEXT_COLOR = "#d4d4d8";
+const ACCENT = "#c4f56d";
+const EDGE_COLOR = "#34343c";
+const TEXT_COLOR = "#d9d9de";
+const BG_COLOR = "#0b0b0d";
 
 export const cytoscapeStylesheet: StylesheetJson = [
   {
     selector: "node",
     style: {
       label: "data(name)",
+      "font-family": "Geist, ui-sans-serif, system-ui, sans-serif",
       "font-size": 11,
+      "font-weight": 500,
       color: TEXT_COLOR,
       "text-valign": "bottom",
       "text-halign": "center",
-      "text-margin-y": 6,
-      "text-max-width": "110px",
+      "text-margin-y": 7,
+      "text-max-width": "120px",
       "text-wrap": "ellipsis",
-      "text-background-color": "#0b0b0d",
-      "text-background-opacity": 0.7,
+      "text-background-color": BG_COLOR,
+      "text-background-opacity": 0.75,
       "text-background-padding": "2px",
-      "border-width": 0,
+      "border-width": 1.5,
+      "border-color": BG_COLOR,
       "transition-property": "opacity, border-width, border-color",
       "transition-duration": 0.15,
     },
@@ -44,8 +50,8 @@ export const cytoscapeStylesheet: StylesheetJson = [
     selector: "node.label",
     style: {
       shape: "round-rectangle",
-      width: 44,
-      height: 44,
+      width: 46,
+      height: 46,
       "background-color": ENTITY_COLORS.label,
     },
   },
@@ -53,8 +59,8 @@ export const cytoscapeStylesheet: StylesheetJson = [
     selector: "node.artist",
     style: {
       shape: "ellipse",
-      width: 34,
-      height: 34,
+      width: 36,
+      height: 36,
       "background-color": ENTITY_COLORS.artist,
     },
   },
@@ -62,8 +68,8 @@ export const cytoscapeStylesheet: StylesheetJson = [
     selector: "node.release-group",
     style: {
       shape: "round-rectangle",
-      width: 36,
-      height: 36,
+      width: 38,
+      height: 38,
       "background-color": ENTITY_COLORS["release-group"],
     },
   },
@@ -88,11 +94,11 @@ export const cytoscapeStylesheet: StylesheetJson = [
   {
     selector: "edge",
     style: {
-      width: 1.5,
+      width: 1.25,
       "line-color": EDGE_COLOR,
       "curve-style": "bezier",
       label: "",
-      "transition-property": "opacity",
+      "transition-property": "opacity, line-color, width",
       "transition-duration": 0.15,
     },
   },
@@ -100,8 +106,15 @@ export const cytoscapeStylesheet: StylesheetJson = [
     selector: ".selected",
     style: {
       "border-width": 3,
-      "border-color": "#fafafa",
-      "border-opacity": 0.95,
+      "border-color": ACCENT,
+      "border-opacity": 1,
+    },
+  },
+  {
+    selector: "edge.neighbor",
+    style: {
+      "line-color": "#4a4a55",
+      width: 1.75,
     },
   },
   {
@@ -109,12 +122,13 @@ export const cytoscapeStylesheet: StylesheetJson = [
     style: {
       "border-width": 2,
       "border-color": "data(accent)",
+      "border-opacity": 0.7,
       opacity: 1,
     },
   },
   {
     selector: ".dimmed",
-    style: { opacity: 0.25 },
+    style: { opacity: 0.22 },
   },
   {
     selector: ".has-more",
@@ -122,11 +136,12 @@ export const cytoscapeStylesheet: StylesheetJson = [
       "border-style": "dashed",
       "border-width": 2,
       "border-color": "data(accent)",
+      "border-opacity": 0.85,
     },
   },
   {
     selector: ".loading",
-    style: { opacity: 0.6 },
+    style: { opacity: 0.55 },
   },
   {
     selector: ".error",

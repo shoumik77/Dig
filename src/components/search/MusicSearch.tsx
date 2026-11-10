@@ -184,8 +184,8 @@ export function MusicSearch({
 
   return (
     <div ref={rootRef} className="relative w-80 max-w-full">
-      <div className="flex items-center gap-2 rounded border border-border bg-surface px-3 h-9">
-        <Search size={14} className="shrink-0 text-zinc-500" />
+      <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface/85 px-3 backdrop-blur-sm transition-colors duration-150 focus-within:border-accent/50">
+        <Search size={14} className="shrink-0 text-muted/70" />
         <input
           id="dig-search-input"
           ref={inputRef}
@@ -194,13 +194,16 @@ export function MusicSearch({
           onFocus={() => rows.length > 0 && setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder={live ? "Search MusicBrainz…" : "Search labels, artists, releases…"}
-          className="w-full bg-transparent text-sm text-zinc-100 placeholder-zinc-500 outline-none"
+          className="w-full bg-transparent text-sm text-text placeholder-muted/70 outline-none"
           aria-label="Search music entities"
         />
+        <kbd className="hidden shrink-0 rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] leading-none text-muted sm:block">
+          ⌘K
+        </kbd>
       </div>
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-[360px] overflow-y-auto rounded border border-border bg-surface py-1 shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-20 mt-1.5 max-h-[360px] overflow-y-auto rounded-md border border-border bg-surface py-1 shadow-2xl shadow-black/40">
           {live && (
             <div className="flex gap-1 border-b border-border px-2 pb-2 pt-1">
               {CATEGORIES.map((c) => (
@@ -212,8 +215,8 @@ export function MusicSearch({
                   aria-pressed={category === c.type}
                   className={`rounded px-2 py-1 text-[11px] transition-colors duration-150 ${
                     category === c.type
-                      ? "bg-surface-2 text-zinc-100"
-                      : "text-zinc-400 hover:bg-surface-2 hover:text-zinc-100"
+                      ? "bg-surface-2 text-text"
+                      : "text-muted hover:bg-surface-2 hover:text-text"
                   }`}
                 >
                   {c.label}
@@ -223,26 +226,26 @@ export function MusicSearch({
           )}
 
           {tooShort && (
-            <div className="px-3 py-2 text-sm text-zinc-500">
+            <div className="px-3 py-2 text-sm text-muted/70">
               Type at least {MIN_LIVE_CHARS} characters
             </div>
           )}
 
           {!tooShort && loading && (
-            <div className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400" />
+            <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted/70">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
               Searching MusicBrainz…
             </div>
           )}
 
           {!tooShort && !loading && error && (
             <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-              <span className="text-zinc-400">{error}</span>
+              <span className="text-muted">{error}</span>
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setRetryTick((t) => t + 1)}
-                className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-xs text-zinc-300 hover:bg-surface-2"
+                className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-xs text-muted hover:bg-surface-2"
               >
                 <RotateCcw size={11} /> Retry
               </button>
@@ -250,7 +253,7 @@ export function MusicSearch({
           )}
 
           {!tooShort && !loading && !error && rows.length === 0 && searched && (
-            <div className="px-3 py-2 text-sm text-zinc-500">
+            <div className="px-3 py-2 text-sm text-muted/70">
               {live
                 ? `No ${CATEGORIES.find((c) => c.type === category)!.label.toLowerCase()} found for “${trimmed}”`
                 : `No results for “${trimmed}”`}
@@ -263,7 +266,7 @@ export function MusicSearch({
               if (groupRows.length === 0) return null;
               return (
                 <div key={group}>
-                  <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                  <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-muted/70">
                     {group}
                   </div>
                   {groupRows.map((row) => {
@@ -280,8 +283,8 @@ export function MusicSearch({
                         onMouseEnter={() => setHighlight(index)}
                         className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors duration-150 ${
                           index === highlight
-                            ? "bg-surface-2 text-zinc-100"
-                            : "text-zinc-300"
+                            ? "bg-surface-2 text-text"
+                            : "text-muted"
                         }`}
                       >
                         <span
@@ -289,7 +292,7 @@ export function MusicSearch({
                           style={{ backgroundColor: ENTITY_COLORS[row.entity.type] }}
                         />
                         <span className="truncate">{row.entity.name}</span>
-                        <span className="ml-auto shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-500">
+                        <span className="ml-auto shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] text-muted/70">
                           {ENTITY_LABELS[row.entity.type]}
                         </span>
                       </button>
@@ -300,7 +303,7 @@ export function MusicSearch({
             })}
 
           {live && (
-            <div className="border-t border-border px-3 pb-1 pt-2 text-[10px] text-zinc-500">
+            <div className="border-t border-border px-3 pb-1 pt-2 text-[10px] text-muted/70">
               Results from MusicBrainz
             </div>
           )}

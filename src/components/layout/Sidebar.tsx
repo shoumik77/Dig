@@ -1,7 +1,8 @@
 "use client";
 
-import { Bookmark, Compass, Disc3, History, Search } from "lucide-react";
+import { Bookmark, Compass, History, Search } from "lucide-react";
 import { ENTITY_COLORS } from "@/components/graph/graphStyles";
+import { CrateList, type CrateListProps } from "@/components/crates/CrateList";
 import type { GraphMode } from "@/lib/graphServiceRegistry";
 import type { MusicEntity } from "@/types/music";
 
@@ -12,6 +13,22 @@ const MODE_CAPTIONS: Record<GraphMode, string> = {
   live: "Live metadata from MusicBrainz",
 };
 
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] leading-none text-muted">
+      {children}
+    </kbd>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-muted/80">
+      {children}
+    </div>
+  );
+}
+
 export function ModeSwitch({
   mode,
   onModeChange,
@@ -20,7 +37,11 @@ export function ModeSwitch({
   onModeChange(mode: GraphMode): void;
 }) {
   return (
-    <div role="radiogroup" aria-label="Data source" className="flex gap-1">
+    <div
+      role="radiogroup"
+      aria-label="Data source"
+      className="flex gap-0.5 rounded-md border border-border bg-bg p-0.5"
+    >
       {(["demo", "live"] as const).map((m) => (
         <button
           key={m}
@@ -30,8 +51,8 @@ export function ModeSwitch({
           onClick={() => onModeChange(m)}
           className={`flex-1 rounded px-3 py-1.5 text-xs capitalize transition-colors duration-150 ${
             mode === m
-              ? "bg-surface-2 text-zinc-100"
-              : "text-zinc-400 hover:bg-surface-2 hover:text-zinc-100"
+              ? "bg-surface-2 text-text"
+              : "text-muted hover:text-text"
           }`}
         >
           {m === "demo" ? "Demo" : "Live"}
@@ -55,6 +76,7 @@ interface SidebarProps {
   genreCaption?: string;
   /** shown when `genres` is empty */
   genreEmptyText?: string;
+  crateList: CrateListProps;
 }
 
 export function Sidebar({
@@ -68,59 +90,67 @@ export function Sidebar({
   genres,
   genreCaption,
   genreEmptyText,
+  crateList,
 }: SidebarProps) {
   return (
-    <div className="flex h-full flex-col bg-surface">
+    <div className="flex h-full flex-col overflow-y-auto bg-surface">
       {/* brand */}
-      <div className="flex items-center gap-2.5 border-b border-border px-4 py-4">
-        <Disc3 size={22} style={{ color: ENTITY_COLORS.label }} />
+      <div className="flex items-center gap-2.5 px-4 pb-4 pt-5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/15 text-accent">
+          <Compass size={16} strokeWidth={2.25} />
+        </div>
         <div>
-          <div className="text-base font-semibold leading-tight">Dig</div>
-          <div className="text-[11px] text-zinc-500">Follow the sound.</div>
+          <div className="text-[15px] font-semibold leading-tight tracking-tight">
+            Dig
+          </div>
+          <div className="text-[11px] text-muted">Follow the sound.</div>
         </div>
       </div>
 
-      {/* nav */}
-      <nav className="border-b border-border px-2 py-2 text-sm">
-        <div className="flex items-center gap-2 rounded bg-surface-2 px-3 py-2 text-zinc-100">
-          <Compass size={15} className="text-zinc-400" /> Dig Mode
-        </div>
-        <div className="px-1 pb-1">
-          <ModeSwitch mode={mode} onModeChange={onModeChange} />
-          <div className="px-2 pt-1 text-[11px] text-zinc-500">
-            {MODE_CAPTIONS[mode]}
-          </div>
-        </div>
+      {/* search trigger */}
+      <div className="px-3">
         <button
           type="button"
           onClick={onSearchClick}
-          className="flex w-full items-center gap-2 rounded px-3 py-2 text-zinc-400 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100"
+          className="flex w-full items-center gap-2 rounded-md border border-border bg-bg px-3 py-2 text-sm text-muted transition-colors duration-150 hover:border-muted/40 hover:text-text"
         >
-          <Search size={15} /> Search
+          <Search size={14} />
+          <span className="flex-1 text-left">Search</span>
+          <Kbd>⌘K</Kbd>
         </button>
-        <div className="flex w-full items-center gap-2 rounded px-3 py-2 text-zinc-500">
-          <Bookmark size={15} /> Saved Crates
-          <span className="ml-auto text-xs">0</span>
-          <span className="rounded border border-border px-1 py-0.5 text-[9px] uppercase text-zinc-500">
-            Soon
-          </span>
+      </div>
+
+      {/* nav */}
+      <nav className="px-3 pt-4 text-sm">
+        <SectionLabel>Explore</SectionLabel>
+        <div className="px-1 pb-1">
+          <ModeSwitch mode={mode} onModeChange={onModeChange} />
+          <div className="px-2 pt-1.5 text-[11px] text-muted/80">
+            {MODE_CAPTIONS[mode]}
+          </div>
+        </div>
+        <div className="mt-2">
+          <div className="mb-1 flex items-center gap-1.5 px-2 text-[10px] font-medium uppercase tracking-[0.12em] text-muted/80">
+            <Bookmark size={11} /> Crates
+          </div>
+          <CrateList {...crateList} />
         </div>
       </nav>
 
       {/* recently explored */}
-      <div className="border-b border-border px-4 py-3">
-        <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+      <div className="px-4 pt-5">
+        <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted/80">
           <History size={11} /> Recently Explored
         </div>
         {recent.length === 0 && (
-          <div className="text-xs text-zinc-600">Nothing yet</div>
+          <div className="text-xs text-muted/70">Nothing yet</div>
         )}
         {recent.map((entity) => (
           <button
             key={entity.id}
             type="button"
             onClick={() => onSelectRecent(entity.id)}
-            className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm text-zinc-300 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100"
+            className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
           >
             <span
               className="h-2 w-2 shrink-0 rounded-full"
@@ -132,18 +162,18 @@ export function Sidebar({
       </div>
 
       {/* genre filters */}
-      <div className="px-4 py-3">
-        <div className="mb-2 flex items-baseline gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+      <div className="px-4 py-5">
+        <div className="mb-2 flex items-baseline gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted/80">
           Genres
           {genreCaption && (
-            <span className="normal-case tracking-normal text-zinc-600">
+            <span className="normal-case tracking-normal text-muted/60">
               {genreCaption}
             </span>
           )}
         </div>
         {genres.length === 0 ? (
           genreEmptyText && (
-            <div className="text-xs text-zinc-600">{genreEmptyText}</div>
+            <div className="text-xs text-muted/70">{genreEmptyText}</div>
           )
         ) : (
           <div className="flex flex-wrap gap-1.5">
@@ -154,10 +184,11 @@ export function Sidebar({
                   key={genre}
                   type="button"
                   onClick={() => onToggleGenre(genre)}
+                  aria-pressed={active}
                   className={`rounded-full border px-2.5 py-1 text-xs transition-colors duration-150 ${
                     active
-                      ? "border-label text-label"
-                      : "border-border text-zinc-400 hover:bg-surface-2 hover:text-zinc-200"
+                      ? "border-accent/60 bg-accent/10 text-accent"
+                      : "border-border text-muted hover:border-muted/40 hover:text-text"
                   }`}
                 >
                   {genre}

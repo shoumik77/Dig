@@ -2,6 +2,7 @@
 // stale-response invalidation, in-flight guards, and failure dispatch.
 import { DEFAULT_PAGE_SIZE, type GraphService } from "./graphService";
 import type { GraphAction, GraphState } from "./graphState";
+import type { MusicEntity } from "@/types/music";
 
 export interface GraphControllerDeps {
   service: GraphService;
@@ -14,6 +15,7 @@ export interface GraphController {
   expand(id: string): Promise<void>;
   loadMore(id: string): Promise<void>;
   startFrom(id: string): Promise<boolean>;
+  startFromEntity(entity: MusicEntity): Promise<void>;
   selectNode(id: string): void;
   select(id: string | null): void;
   enrich(id: string): Promise<void>;
@@ -100,6 +102,11 @@ export function createGraphController(
     return true;
   }
 
+  async function startFromEntity(entity: MusicEntity) {
+    dispatch({ type: "INIT_FROM", entity });
+    await expand(entity.id);
+  }
+
   async function enrich(id: string) {
     // Enrichment is lazy and selection-driven — never on the expansion path.
     if (service.providerId !== "musicbrainz") return;
@@ -126,6 +133,7 @@ export function createGraphController(
     expand,
     loadMore,
     startFrom,
+    startFromEntity,
     enrich,
 
     selectNode(id) {

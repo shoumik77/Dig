@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { Bookmark, ExternalLink, X } from "lucide-react";
 import type { GraphState } from "@/lib/graphState";
 import { getExpansion, hasMore, isExpanded } from "@/lib/graphState";
 import { ENTITY_COLORS, ENTITY_LABELS } from "@/components/graph/graphStyles";
+import { SaveToCrateMenu } from "@/components/crates/SaveToCrateMenu";
+import type { Crate, CrateSummary } from "@/types/crate";
 import type {
   MusicEntity,
   MusicRelationship,
@@ -20,6 +22,11 @@ interface EntityDetailsProps {
   onLoadMore(id: string): void;
   onClose(): void;
   capabilities?: { discogs: boolean };
+  crates?: CrateSummary[];
+  /** crateIds already known to contain `entity` */
+  savedCrateIds?: ReadonlySet<string>;
+  onSaveToCrate?(crateId: string, entity: MusicEntity): Promise<boolean>;
+  onCreateCrate?(name: string): Promise<Crate | undefined>;
 }
 
 interface MetaField {
@@ -116,12 +123,16 @@ export function EntityDetails({
   onLoadMore,
   onClose,
   capabilities,
+  crates,
+  savedCrateIds,
+  onSaveToCrate,
+  onCreateCrate,
 }: EntityDetailsProps) {
-  const [crateHint, setCrateHint] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   if (!entity) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-zinc-500">
+      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted/70">
         Select a node to see details
       </div>
     );
@@ -187,13 +198,15 @@ export function EntityDetails({
     return String(v);
   }
 
-  function flashCrateHint() {
-    setCrateHint(true);
-    setTimeout(() => setCrateHint(false), 1500);
-  }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
+    <motion.div
+      key={entity.id}
+      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="flex h-full flex-col overflow-y-auto"
+    >
       {/* header */}
       <div className="flex items-start justify-between gap-2 p-4 pb-3">
         <div className="min-w-0">
@@ -205,7 +218,7 @@ export function EntityDetails({
               width={72}
               height={72}
               referrerPolicy="no-referrer"
-              className="mb-2 h-[72px] w-[72px] rounded object-cover"
+              className="mb-3 h-20 w-20 rounded-md border border-border object-cover"
             />
           )}
           <span
@@ -217,9 +230,9 @@ export function EntityDetails({
           >
             {ENTITY_LABELS[entity.type]}
           </span>
-          <h2 className="mt-2 text-lg font-semibold leading-tight">{entity.name}</h2>
+          <h2 className="mt-2 text-xl font-semibold leading-tight tracking-tight">{entity.name}</h2>
           {entity.provenance === "demo" && (
-            <span className="mt-1 inline-block rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-500">
+            <span className="mt-1 inline-block rounded border border-border px-1.5 py-0.5 text-[10px] text-muted/70">
               Demo data
             </span>
           )}
@@ -229,7 +242,7 @@ export function EntityDetails({
               target="_blank"
               rel="noopener noreferrer"
               title="View on MusicBrainz"
-              className="mt-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-400 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-200"
+              className="mt-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
             >
               MusicBrainz <ExternalLink size={9} />
             </a>
@@ -240,7 +253,7 @@ export function EntityDetails({
               target="_blank"
               rel="noopener noreferrer"
               title="View on Discogs"
-              className="mt-1 ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-400 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-200"
+              className="mt-1 ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
             >
               Discogs <ExternalLink size={9} />
             </a>
@@ -250,7 +263,7 @@ export function EntityDetails({
           type="button"
           onClick={onClose}
           aria-label="Close details"
-          className="rounded p-1 text-zinc-500 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-200"
+          className="rounded p-1 text-muted/70 transition-colors duration-150 hover:bg-surface-2 hover:text-text"
         >
           <X size={16} />
         </button>
@@ -262,11 +275,11 @@ export function EntityDetails({
           const value = metaValue(field.get(meta));
           return (
             <div key={field.label} className="mb-1.5 flex gap-2 text-sm">
-              <dt className="w-24 shrink-0 text-zinc-500">{field.label}</dt>
+              <dt className="w-24 shrink-0 text-muted/70">{field.label}</dt>
               {value !== null ? (
-                <dd className="text-zinc-200">{value}</dd>
+                <dd className="text-text">{value}</dd>
               ) : (
-                <dd className="italic text-zinc-600">Not available</dd>
+                <dd className="italic text-muted/60">Not available</dd>
               )}
             </div>
           );
@@ -276,17 +289,17 @@ export function EntityDetails({
       {/* Discogs enrichment (live, on selection) */}
       {showDiscogs && (
         <div className="border-t border-border px-4 py-3">
-          <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+          <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted/70">
             From Discogs
           </div>
           {discogsLoading && !enrichFetched && (
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400" />
+            <div className="flex items-center gap-2 text-xs text-muted/70">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
               Loading Discogs…
             </div>
           )}
           {enrichFetched && !discogs && (
-            <div className="text-xs italic text-zinc-600">No Discogs match</div>
+            <div className="text-xs italic text-muted/60">No Discogs match</div>
           )}
           {discogs && (
             <div className="flex flex-col gap-2.5">
@@ -297,7 +310,7 @@ export function EntityDetails({
                     (g) => (
                       <span
                         key={g}
-                        className="rounded-full border border-border px-2 py-0.5 text-[11px] text-zinc-300"
+                        className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted"
                       >
                         {g}
                       </span>
@@ -309,21 +322,21 @@ export function EntityDetails({
                 <div>
                   {discogs.credits.map((c) => (
                     <div key={`${c.role}-${c.name}`} className="text-sm">
-                      <span className="text-zinc-500">{c.role}</span>
-                      <span className="text-zinc-600"> — </span>
-                      <span className="text-zinc-200">{c.name}</span>
+                      <span className="text-muted/70">{c.role}</span>
+                      <span className="text-muted/60"> — </span>
+                      <span className="text-text">{c.name}</span>
                       {c.tracks && (
-                        <span className="text-zinc-600"> [{c.tracks}]</span>
+                        <span className="text-muted/60"> [{c.tracks}]</span>
                       )}
                     </div>
                   ))}
-                  <div className="mt-0.5 text-[10px] text-zinc-600">
+                  <div className="mt-0.5 text-[10px] text-muted/60">
                     Credits per Discogs contributors
                   </div>
                 </div>
               )}
               {(discogs.community || discogs.numForSale != null) && (
-                <div className="text-xs text-zinc-500">
+                <div className="text-xs text-muted/70">
                   {discogs.community && (
                     <span>
                       {discogs.community.have} have · {discogs.community.want}{" "}
@@ -348,25 +361,25 @@ export function EntityDetails({
                       href={v.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-baseline gap-2 py-0.5 text-sm text-zinc-300 transition-colors duration-150 hover:text-zinc-100"
+                      className="flex items-baseline gap-2 py-0.5 text-sm text-muted transition-colors duration-150 hover:text-text"
                     >
                       <span className="flex-1 truncate">{v.title}</span>
                       {v.durationSec != null && (
-                        <span className="shrink-0 text-xs text-zinc-500">
+                        <span className="shrink-0 text-xs text-muted/70">
                           {formatLength(v.durationSec * 1000)}
                         </span>
                       )}
-                      <ExternalLink size={11} className="shrink-0 self-center text-zinc-500" />
+                      <ExternalLink size={11} className="shrink-0 self-center text-muted/70" />
                     </a>
                   ))}
                 </div>
               )}
               {discogs.profile && (
-                <p className="text-xs leading-relaxed text-zinc-400">
+                <p className="text-xs leading-relaxed text-muted">
                   {discogs.profile}
                 </p>
               )}
-              <div className="text-[10px] text-zinc-600">
+              <div className="text-[10px] text-muted/60">
                 Data provided by Discogs
               </div>
             </div>
@@ -377,7 +390,7 @@ export function EntityDetails({
       {/* tracklist (live releases) */}
       {tracks.length > 0 && (
         <div className="border-t border-border px-4 py-3">
-          <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+          <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-muted/70">
             Tracklist
           </div>
           {tracks.map((track) => {
@@ -386,11 +399,11 @@ export function EntityDetails({
               "flex w-full items-baseline gap-2 rounded px-1 py-1 text-left text-sm";
             const label = (
               <>
-                <span className="w-8 shrink-0 text-zinc-500">
+                <span className="w-8 shrink-0 text-muted/70">
                   {track.number ?? track.position}
                 </span>
                 <span className="flex-1 truncate">{track.title}</span>
-                <span className="shrink-0 text-zinc-500">
+                <span className="shrink-0 text-muted/70">
                   {track.lengthMs != null ? formatLength(track.lengthMs) : "—"}
                 </span>
               </>
@@ -400,14 +413,14 @@ export function EntityDetails({
                 key={`${track.medium ?? 0}:${track.position}`}
                 type="button"
                 onClick={() => onSelectNode(track.recordingId)}
-                className={`${rowClass} text-zinc-300 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100`}
+                className={`${rowClass} text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text`}
               >
                 {label}
               </button>
             ) : (
               <div
                 key={`${track.medium ?? 0}:${track.position}`}
-                className={`${rowClass} text-zinc-400`}
+                className={`${rowClass} text-muted`}
               >
                 {label}
               </div>
@@ -417,7 +430,7 @@ export function EntityDetails({
       )}
 
       {verified && (
-        <div className="border-t border-border px-4 py-2 text-[10px] text-zinc-500">
+        <div className="border-t border-border px-4 py-2 text-[10px] text-muted/70">
           Metadata retrieved from MusicBrainz. Artist credits are credits, not
           production or remix claims.
         </div>
@@ -428,7 +441,7 @@ export function EntityDetails({
         <div className="border-t border-border px-4 py-3">
           {connectionGroups.map((group) => (
             <div key={group.label} className="mb-3">
-              <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+              <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-muted/70">
                 {group.label}
               </div>
               {group.items.map(({ rel, other }) => (
@@ -436,7 +449,7 @@ export function EntityDetails({
                   key={rel.id}
                   type="button"
                   onClick={() => onSelectNode(other.id)}
-                  className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm text-zinc-300 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100"
+                  className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
                 >
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
@@ -448,7 +461,7 @@ export function EntityDetails({
             </div>
           ))}
           {expansion && expansion.total > 0 && (
-            <div className="mt-1 text-[11px] text-zinc-500">
+            <div className="mt-1 text-[11px] text-muted/70">
               Showing {expansion.loaded} of {expansion.total} connections
             </div>
           )}
@@ -467,7 +480,7 @@ export function EntityDetails({
                   ? onLoadMore(entity.id)
                   : onExpand(entity.id)
               }
-              className="rounded border border-border px-2 py-0.5 text-[11px] text-zinc-200 transition-colors duration-150 hover:bg-surface-2"
+              className="rounded border border-border px-2 py-0.5 text-[11px] text-text transition-colors duration-150 hover:bg-surface-2"
             >
               Retry
             </button>
@@ -478,7 +491,7 @@ export function EntityDetails({
             type="button"
             onClick={() => onExpand(entity.id)}
             disabled={loading || (expanded && !failed)}
-            className="rounded bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 transition-colors duration-150 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-bg transition-colors duration-150 hover:bg-accent/85 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? "Loading…" : "Expand"}
           </button>
@@ -487,31 +500,39 @@ export function EntityDetails({
               type="button"
               onClick={() => onLoadMore(entity.id)}
               disabled={loading}
-              className="rounded border border-border bg-surface-2 px-3 py-1.5 text-sm text-zinc-200 transition-colors duration-150 hover:bg-border disabled:opacity-50"
+              className="rounded border border-border bg-surface-2 px-3 py-1.5 text-sm text-text transition-colors duration-150 hover:bg-border disabled:opacity-50"
             >
               {loading ? "Loading…" : `Load more (${remaining} remaining)`}
             </button>
           )}
-          <button
-            type="button"
-            onClick={flashCrateHint}
-            className="flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-zinc-300 transition-colors duration-150 hover:bg-surface-2"
-          >
-            <Bookmark size={14} /> Save to Crate
-          </button>
+          {onSaveToCrate && onCreateCrate ? (
+            <SaveToCrateMenu
+              entity={entity}
+              crates={crates ?? []}
+              savedCrateIds={savedCrateIds}
+              onSave={onSaveToCrate}
+              onCreateCrate={onCreateCrate}
+            />
+          ) : (
+            <button
+              type="button"
+              disabled
+              title="Crates unavailable"
+              className="flex cursor-not-allowed items-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-muted/70 opacity-50"
+            >
+              <Bookmark size={14} /> Save to Crate
+            </button>
+          )}
           <button
             type="button"
             disabled
             title="Listening links coming soon"
-            className="flex cursor-not-allowed items-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-zinc-500 opacity-50"
+            className="flex cursor-not-allowed items-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-muted/70 opacity-50"
           >
             <ExternalLink size={14} /> Listen
           </button>
         </div>
-        {crateHint && (
-          <div className="mt-2 text-xs text-zinc-400">Coming soon</div>
-        )}
       </div>
-    </div>
+    </motion.div>
   );
 }

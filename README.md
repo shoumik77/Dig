@@ -60,28 +60,34 @@ GraphService (provider-agnostic interface)
 src/
 ├── app/
 │   ├── layout.tsx, page.tsx, globals.css (Tailwind v4 @theme tokens)
-│   └── api/music/    Route Handlers: search/, entities/[type]/[id]/,
-│                     entities/[type]/[id]/connections/, _lib/respond.ts
+│   ├── api/music/    Route Handlers: search/, entities/[type]/[id]/,
+│   │                 entities/[type]/[id]/connections/, _lib/respond.ts
+│   ├── api/crates/   Route Handlers: list/create, [crateId] get/patch/delete,
+│   │                 [crateId]/items post, items/[entityId] delete
+│   └── api/_lib/     shared { ok, fail, fromError } envelope helpers
 ├── components/
 │   ├── graph/      MusicGraph.tsx (Cytoscape lifecycle + incremental sync),
 │   │               GraphControls.tsx, graphStyles.ts, placement.ts (pure)
 │   ├── layout/     AppShell.tsx (owns state, demo/live mode), Sidebar.tsx
 │   ├── search/     MusicSearch.tsx
 │   ├── details/    EntityDetails.tsx
+│   ├── crates/     CrateList.tsx, SaveToCrateMenu.tsx
 │   └── player/     MusicPlayer.tsx (non-functional placeholder)
 ├── data/           mockMusic.ts
-├── hooks/          useDigGraph.ts (thin wrapper over the controller)
+├── hooks/          useDigGraph.ts (thin wrapper over the controller),
+│                   useCrates.ts (crate state + mutations)
 ├── lib/            graphService.ts, graphState.ts (pure reducer),
 │                   graphController.ts (async orchestration), graphErrors.ts,
-│                   mbIds.ts, musicBrainzGraphService.ts,
+│                   mbIds.ts, musicBrainzGraphService.ts, crateService.ts,
 │                   graphServiceRegistry.ts, search.ts
 ├── server/
 │   ├── musicbrainz/  config.ts, client.ts, normalize.ts, service.ts,
 │   │                 types.ts, __fixtures__/
 │   ├── discogs/      config.ts, client.ts, normalize.ts, service.ts,
 │   │                 discogsRef.ts, types.ts, __fixtures__/
+│   ├── crates/       config.ts, db.ts (better-sqlite3), store.ts
 │   └── http/         scheduler.ts, cache.ts (shared FIFO + LRU)
-└── types/          music.ts, graph.ts
+└── types/          music.ts, graph.ts, crate.ts
 test/
 └── stubs/          server-only stub for vitest
 ```
@@ -135,6 +141,10 @@ Use the **Demo | Live** switch in the sidebar (or the mobile top bar).
 | `GET /api/music/entities/{type}/{mbid}/connections` | `cursor` (optional, `{mbid}:{offset}` — scoped to that entity), `limit` (clamp 1–25) | `ConnectionsPage` |
 | `GET /api/music/enrich/{type}/{mbid}` | `type` = label\|artist\|release-group\|release | `DiscogsEnrichment \| null` |
 | `GET /api/music/capabilities` | — | `{ discogs: boolean }` |
+| `GET /api/crates` · `POST /api/crates` | `{ name }` on POST | `CrateSummary[]` · `Crate` |
+| `GET /api/crates/{crateId}` · `PATCH` · `DELETE` | `{ name }` on PATCH | `CrateDetail` · `Crate` · `{ id }` |
+| `POST /api/crates/{crateId}/items` | `{ entity }` | `CrateItem` (idempotent upsert) |
+| `DELETE /api/crates/{crateId}/items/{entityId}` | — | `{ entityId }` |
 
 Envelope: `{ ok: true, data }` or `{ ok: false, error: { kind, message, retryAfterMs? } }`.
 Status mapping: 400 `invalid`, 404 `not_found`, 429 `rate_limited` (with a
@@ -221,6 +231,18 @@ is shown in the panel.
 > such a deployment until a shared limiter (e.g. a single coordinating
 > service) is provided.
 
+## Saved Crates
+
+Crates are named collections of bookmarked entities, persisted in a local
+SQLite database (`better-sqlite3`, WAL mode — default `.data/crates.db`).
+The sidebar lists crates with item counts; "Save to Crate" in the details
+panel adds the selected entity's snapshot. Saving the same entity twice
+re-saves rather than duplicating. Clicking a saved item re-seeds the graph
+from the stored snapshot (`INIT_FROM` + expand) — works in both Demo and
+Live mode, and offline for the initial node. Deleting a crate cascades its
+items. Crates are local-only: single user, no auth, nothing leaves the
+machine.
+
 ## Environment variables
 
 | Variable | Default | Purpose |
@@ -230,6 +252,7 @@ is shown in the panel.
 | `DISCOGS_TOKEN` | — | Personal access token from discogs.com/settings/developers; enables enrichment |
 | `DISCOGS_USER_AGENT` | `Dig/0.2.0 +https://github.com/shoumik77/Dig` | UA sent to Discogs (required by their API policy) |
 | `DISCOGS_CACHE_TTL_MS` | `3600000` | TTL for cached Discogs responses, ms |
+| `CRATES_DB_PATH` | `.data/crates.db` | SQLite file backing Saved Crates |
 
 ## Decisions & tradeoffs
 
@@ -294,7 +317,8 @@ to a few items each).
 - Recording → releases is limited to the first 25 releases MusicBrainz
   embeds in a recording lookup.
 - Search returns the top 10 per category.
-- Saved Crates, the player, and persistence are visual placeholders.
+- The player is a visual placeholder.
+- Saved Crates live in a local SQLite file — single user, no auth, not synced.
 - The rate limiter is single-process only — see the deployment caveat above.
 
 ## Future work
@@ -303,5 +327,5 @@ to a few items each).
   deployment of Live mode
 - Explicit producer/remixer relationships from MusicBrainz
   relationship (`*-rels`) data
-- Persisted graphs / saved crates
+- Persisted whole-graph snapshots (crates currently store bookmarked entities)
 - Real playback links per release

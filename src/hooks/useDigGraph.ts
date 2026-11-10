@@ -7,6 +7,7 @@ import {
   type GraphController,
 } from "@/lib/graphController";
 import { graphReducer, initialGraphState } from "@/lib/graphState";
+import type { MusicEntity } from "@/types/music";
 
 export function useDigGraph(service: GraphService = graphService) {
   const [state, rawDispatch] = useReducer(graphReducer, initialGraphState);
@@ -58,6 +59,11 @@ export function useDigGraph(service: GraphService = graphService) {
       controllerRef.current?.startFrom(id) ?? Promise.resolve(false),
     []
   );
+  const startFromEntity = useCallback(
+    (entity: MusicEntity) =>
+      controllerRef.current?.startFromEntity(entity) ?? Promise.resolve(),
+    []
+  );
   const reset = useCallback(() => {
     controllerRef.current?.reset();
   }, []);
@@ -72,6 +78,7 @@ export function useDigGraph(service: GraphService = graphService) {
     expand,
     loadMore,
     startFrom,
+    startFromEntity,
     reset,
     clear,
   };
