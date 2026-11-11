@@ -26,6 +26,8 @@ export interface UseCrates {
   loading: boolean;
   error: string | null;
   toggle(id: string): void;
+  /** fetch a crate's items; also refreshes membership knowledge */
+  getDetail(id: string): Promise<CrateDetail | undefined>;
   refresh(): Promise<void>;
   create(name: string): Promise<Crate | undefined>;
   rename(id: string, name: string): Promise<boolean>;
@@ -145,6 +147,20 @@ export function useCrates(service: CrateService = defaultService): UseCrates {
     void loadDetail(id);
   }
 
+  const getDetail = useCallback(
+    async (crateId: string): Promise<CrateDetail | undefined> => {
+      try {
+        const detail = await service.getDetail(crateId);
+        setMembership((prev) => applyDetail(prev, detail));
+        return detail;
+      } catch (err) {
+        report(err);
+        return undefined;
+      }
+    },
+    [service, report]
+  );
+
   async function create(name: string): Promise<Crate | undefined> {
     try {
       const crate = await service.create(name);
@@ -217,6 +233,7 @@ export function useCrates(service: CrateService = defaultService): UseCrates {
     loading,
     error,
     toggle,
+    getDetail,
     refresh,
     create,
     rename,

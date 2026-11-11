@@ -9,7 +9,10 @@ import {
 import { graphReducer, initialGraphState } from "@/lib/graphState";
 import type { MusicEntity } from "@/types/music";
 
-export function useDigGraph(service: GraphService = graphService) {
+export function useDigGraph(
+  service: GraphService = graphService,
+  opts?: { selectInitialRoot?: boolean }
+) {
   const [state, rawDispatch] = useReducer(graphReducer, initialGraphState);
   const stateRef = useRef(state);
   useEffect(() => {
@@ -18,6 +21,7 @@ export function useDigGraph(service: GraphService = graphService) {
 
   const getState = useCallback(() => stateRef.current, []);
   const controllerRef = useRef<GraphController | null>(null);
+  const selectInitialRoot = opts?.selectInitialRoot ?? true;
 
   useEffect(() => {
     let cancelled = false;
@@ -32,13 +36,14 @@ export function useDigGraph(service: GraphService = graphService) {
       const root = await service.getDefaultRootId();
       if (cancelled || !root) return;
       await controller.startFrom(root);
+      if (!cancelled && !selectInitialRoot) controller.select(null);
     })();
     return () => {
       cancelled = true;
       controller.dispose();
       controllerRef.current = null;
     };
-  }, [service, getState]);
+  }, [service, getState, selectInitialRoot]);
 
   const selectNode = useCallback((id: string) => {
     controllerRef.current?.selectNode(id);

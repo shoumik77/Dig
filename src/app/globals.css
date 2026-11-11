@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0b0b0d;
-  --color-surface: #151518;
-  --color-surface-2: #1d1d21;
-  --color-border: #2a2a30;
-  --color-text: #f5f5f5;
-  --color-muted: #92929b;
-  --color-accent: #c4f56d;
+  /* Figma tokens: Canvas / Surface / Elevated / Border / Ink / Muted / Acid */
+  --color-bg: #101010;
+  --color-surface: #191919;
+  --color-surface-2: #222222;
+  --color-border: #303030;
+  --color-text: #f2f0ea;
+  --color-muted: #a3a19b;
+  --color-accent: #d6ff57;
+  --color-cream: #e8e4d8;
 
   /* entity palette — keep in sync with ENTITY_COLORS in
      src/components/graph/graphStyles.ts */

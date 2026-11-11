@@ -6,6 +6,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Dig — Follow the sound.",
   description: "Interactive music discovery prototype",
+  // Discogs artwork hotlinks 403 when a Referer is sent; same-origin
+  // /api calls don't need one.
+  referrer: "no-referrer",
 };
 
 export default function RootLayout({

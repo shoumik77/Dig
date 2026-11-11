@@ -1,26 +1,34 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RotateCcw, Search } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { ArrowUpRight, CornerDownLeft, History, Search } from "lucide-react";
 import { graphService, type GraphService } from "@/lib/graphService";
 import { GraphServiceError } from "@/lib/graphErrors";
 import type { GraphMode } from "@/lib/graphServiceRegistry";
 import { ENTITY_COLORS, ENTITY_LABELS } from "@/components/graph/graphStyles";
+import { artworkUrl, entityMetaLine, initialsOf } from "@/lib/entityDisplay";
 import type { EntityType, MusicEntity } from "@/types/music";
 import type { SearchResults } from "@/types/graph";
 
 interface MusicSearchProps {
+  open: boolean;
+  onClose(): void;
   onSelect(id: string): void;
+  onPickRecent(id: string): void;
+  recent: MusicEntity[];
   service?: GraphService;
   mode?: GraphMode;
 }
 
-type GroupLabel = "Labels" | "Artists" | "Groups" | "Releases" | "Recordings";
+type Tab = "all" | EntityType;
 
-interface Row {
-  entity: MusicEntity;
-  group: GroupLabel;
-}
+const TABS: { id: Tab; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "artist", label: "Artists" },
+  { id: "label", label: "Labels" },
+  { id: "release", label: "Releases" },
+];
 
 const EMPTY: SearchResults = {
   label: [],
@@ -30,18 +38,8 @@ const EMPTY: SearchResults = {
   recording: [],
 };
 
-const CATEGORIES: {
-  type: EntityType;
-  label: GroupLabel;
-}[] = [
-  { type: "label", label: "Labels" },
-  { type: "artist", label: "Artists" },
-  { type: "release-group", label: "Groups" },
-  { type: "release", label: "Releases" },
-  { type: "recording", label: "Recordings" },
-];
-
 const MIN_LIVE_CHARS = 2;
+const LIVE_ALL_TYPES: EntityType[] = ["label", "artist", "release"];
 
 function errorMessage(err: unknown): string {
   if (err instanceof GraphServiceError) {
@@ -59,30 +57,77 @@ function errorMessage(err: unknown): string {
   return "Search failed";
 }
 
+function ResultThumb({ entity }: { entity: MusicEntity }) {
+  const image = artworkUrl(entity);
+  if (entity.type === "label" && !image) {
+    return (
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-cream text-sm font-semibold tracking-tight text-bg">
+        {initialsOf(entity.name)}
+      </span>
+    );
+  }
+  const round = entity.type === "artist" ? "rounded-full" : "rounded-sm";
+  if (image) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={image}
+        alt=""
+        referrerPolicy="no-referrer"
+        className={`h-11 w-11 shrink-0 object-cover outline-1 -outline-offset-1 outline-white/10 ${round}`}
+      />
+    );
+  }
+  return (
+    <span
+      className={`flex h-11 w-11 shrink-0 items-center justify-center border bg-surface-2 text-xs font-medium ${round}`}
+      style={{
+        borderColor: `${ENTITY_COLORS[entity.type]}55`,
+        color: ENTITY_COLORS[entity.type],
+      }}
+    >
+      {initialsOf(entity.name)}
+    </span>
+  );
+}
+
 export function MusicSearch({
+  open,
+  onClose,
   onSelect,
+  onPickRecent,
+  recent,
   service = graphService,
   mode = "demo",
 }: MusicSearchProps) {
   const live = mode === "live";
+  const reduceMotion = useReducedMotion();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<EntityType>("label");
+  const [tab, setTab] = useState<Tab>("all");
   const [results, setResults] = useState<SearchResults>(EMPTY);
-  const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [retryTick, setRetryTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
   const requestId = useRef(0);
 
-  const rows: Row[] = CATEGORIES.flatMap((c) =>
-    results[c.type].map((entity) => ({ entity, group: c.label }))
-  );
+  // focus the input after the panel mounts
+  useEffect(() => {
+    if (open) requestAnimationFrame(() => inputRef.current?.focus());
+  }, [open]);
+
+  // merged row order: labels, artists, releases, then the rest
+  const rows: MusicEntity[] =
+    tab === "all"
+      ? (
+          ["label", "artist", "release", "release-group", "recording"] as const
+        ).flatMap((t) => results[t]).slice(0, 9)
+      : results[tab].slice(0, 12);
 
   useEffect(() => {
+    if (!open) return;
     const q = query.trim();
     const timer = setTimeout(
       () => {
@@ -96,9 +141,36 @@ export function MusicSearch({
         const id = ++requestId.current;
         setLoading(true);
         setError(null);
-        setOpen(true);
+
+        if (live && tab === "all") {
+          // parallel label+artist+release searches, merging as they resolve
+          let pending = LIVE_ALL_TYPES.length;
+          for (const type of LIVE_ALL_TYPES) {
+            void service
+              .searchEntities(q, { type })
+              .then((r) => {
+                if (id !== requestId.current) return;
+                setResults((prev) => ({ ...prev, [type]: r[type] }));
+              })
+              .catch((err: unknown) => {
+                if (id !== requestId.current) return;
+                setError((prev) => prev ?? errorMessage(err));
+              })
+              .finally(() => {
+                if (id !== requestId.current) return;
+                pending -= 1;
+                if (pending === 0) {
+                  setLoading(false);
+                  setSearched(true);
+                  setHighlight(0);
+                }
+              });
+          }
+          return;
+        }
+
         void service
-          .searchEntities(q, live ? { type: category } : undefined)
+          .searchEntities(q, live ? { type: tab === "all" ? "label" : tab } : undefined)
           .then((r) => {
             if (id !== requestId.current) return;
             setResults(r);
@@ -106,7 +178,6 @@ export function MusicSearch({
             setError(null);
             setSearched(true);
             setHighlight(0);
-            setOpen(true);
           })
           .catch((err: unknown) => {
             if (id !== requestId.current) return;
@@ -119,196 +190,244 @@ export function MusicSearch({
       q ? (live ? 300 : 120) : 0
     );
     return () => clearTimeout(timer);
-  }, [query, category, service, live, retryTick]);
+  }, [query, tab, service, live, open, retryTick]);
 
+  // close on Escape even when the input isn't focused
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
     }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   function choose(entity: MusicEntity) {
     onSelect(entity.id);
     setQuery("");
     setResults(EMPTY);
-    setOpen(false);
-    (document.activeElement as HTMLElement | null)?.blur();
+    onClose();
   }
 
-  function moveCategory(dir: 1 | -1) {
-    const i = CATEGORIES.findIndex((c) => c.type === category);
-    setCategory(
-      CATEGORIES[(i + dir + CATEGORIES.length) % CATEGORIES.length].type
-    );
+  function moveTab(dir: 1 | -1) {
+    const i = TABS.findIndex((t) => t.id === tab);
+    setTab(TABS[(i + dir + TABS.length) % TABS.length].id);
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
-    if (live && open && e.key === "ArrowLeft") {
+    if (e.key === "ArrowLeft") {
       e.preventDefault();
-      moveCategory(-1);
+      moveTab(-1);
       return;
     }
-    if (live && open && e.key === "ArrowRight") {
+    if (e.key === "ArrowRight") {
       e.preventDefault();
-      moveCategory(1);
-      return;
-    }
-    if (!open || rows.length === 0) {
-      if (e.key === "Escape") setOpen(false);
+      moveTab(1);
       return;
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlight((h) => (h + 1) % rows.length);
+      if (rows.length > 0) setHighlight((h) => (h + 1) % rows.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlight((h) => (h - 1 + rows.length) % rows.length);
+      if (rows.length > 0)
+        setHighlight((h) => (h - 1 + rows.length) % rows.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      choose(rows[highlight].entity);
+      if (rows[highlight]) choose(rows[highlight]);
     } else if (e.key === "Escape") {
-      setOpen(false);
+      onClose();
     }
   }
 
   const trimmed = query.trim();
-  const showDropdown = open && trimmed.length > 0;
   const tooShort = live && trimmed.length > 0 && trimmed.length < MIN_LIVE_CHARS;
-  const groups: GroupLabel[] = live
-    ? [CATEGORIES.find((c) => c.type === category)!.label]
-    : CATEGORIES.map((c) => c.label);
 
   return (
-    <div ref={rootRef} className="relative w-80 max-w-full">
-      <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface/85 px-3 backdrop-blur-sm transition-colors duration-150 focus-within:border-accent/50">
-        <Search size={14} className="shrink-0 text-muted/70" />
-        <input
-          id="dig-search-input"
-          ref={inputRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => rows.length > 0 && setOpen(true)}
-          onKeyDown={onKeyDown}
-          placeholder={live ? "Search MusicBrainz…" : "Search labels, artists, releases…"}
-          className="w-full bg-transparent text-sm text-text placeholder-muted/70 outline-none"
-          aria-label="Search music entities"
-        />
-        <kbd className="hidden shrink-0 rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] leading-none text-muted sm:block">
-          ⌘K
-        </kbd>
-      </div>
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center p-4 pt-[10vh]">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.15 }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search"
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="relative flex max-h-[75vh] w-full max-w-[640px] flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl shadow-black/50"
+          >
+            {/* input row */}
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
+              <Search size={16} className="shrink-0 text-muted" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder={
+                  live ? "Search MusicBrainz…" : "Search artists, labels, releases"
+                }
+                className="min-w-0 flex-1 bg-transparent text-lg text-text placeholder-muted/60 outline-none"
+                aria-label="Search music entities"
+              />
+              <button
+                type="button"
+                onClick={onClose}
+                className="shrink-0 rounded border border-border bg-surface-2 px-2 py-1 font-mono text-[10px] text-muted transition-colors duration-150 hover:text-text"
+              >
+                esc
+              </button>
+            </div>
 
-      {showDropdown && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1.5 max-h-[360px] overflow-y-auto rounded-md border border-border bg-surface py-1 shadow-2xl shadow-black/40">
-          {live && (
-            <div className="flex gap-1 border-b border-border px-2 pb-2 pt-1">
-              {CATEGORIES.map((c) => (
+            {/* category tabs */}
+            <div className="flex gap-2 border-b border-border px-4 py-3">
+              {TABS.map((t) => (
                 <button
-                  key={c.type}
+                  key={t.id}
                   type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => setCategory(c.type)}
-                  aria-pressed={category === c.type}
-                  className={`rounded px-2 py-1 text-[11px] transition-colors duration-150 ${
-                    category === c.type
-                      ? "bg-surface-2 text-text"
-                      : "text-muted hover:bg-surface-2 hover:text-text"
+                  onClick={() => setTab(t.id)}
+                  aria-pressed={tab === t.id}
+                  className={`rounded-md px-4 py-1.5 text-sm transition-colors duration-150 enabled:active:scale-[0.96] motion-safe:transition-transform ${
+                    tab === t.id
+                      ? "bg-accent font-medium text-bg"
+                      : "bg-surface-2 text-muted hover:text-text"
                   }`}
                 >
-                  {c.label}
+                  {t.label}
                 </button>
               ))}
             </div>
-          )}
 
-          {tooShort && (
-            <div className="px-3 py-2 text-sm text-muted/70">
-              Type at least {MIN_LIVE_CHARS} characters
-            </div>
-          )}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
+              {tooShort && (
+                <div className="px-3 py-2 text-sm text-muted/70">
+                  Type at least {MIN_LIVE_CHARS} characters
+                </div>
+              )}
 
-          {!tooShort && loading && (
-            <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted/70">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
-              Searching MusicBrainz…
-            </div>
-          )}
+              {!tooShort && loading && (
+                <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted/70">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
+                  {live ? "Searching MusicBrainz…" : "Searching…"}
+                </div>
+              )}
 
-          {!tooShort && !loading && error && (
-            <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-              <span className="text-muted">{error}</span>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setRetryTick((t) => t + 1)}
-                className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-xs text-muted hover:bg-surface-2"
-              >
-                <RotateCcw size={11} /> Retry
-              </button>
-            </div>
-          )}
+              {!tooShort && !loading && error && (
+                <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                  <span className="text-muted">{error}</span>
+                  <button
+                    type="button"
+                    onClick={() => setRetryTick((t) => t + 1)}
+                    className="rounded border border-border px-2 py-0.5 text-xs text-muted hover:bg-surface-2"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
 
-          {!tooShort && !loading && !error && rows.length === 0 && searched && (
-            <div className="px-3 py-2 text-sm text-muted/70">
-              {live
-                ? `No ${CATEGORIES.find((c) => c.type === category)!.label.toLowerCase()} found for “${trimmed}”`
-                : `No results for “${trimmed}”`}
-            </div>
-          )}
+              {!tooShort && !loading && !error && rows.length === 0 && searched && (
+                <div className="px-3 py-2 text-sm text-muted/70">
+                  No results for “{trimmed}”
+                </div>
+              )}
 
-          {!tooShort &&
-            groups.map((group) => {
-              const groupRows = rows.filter((r) => r.group === group);
-              if (groupRows.length === 0) return null;
-              return (
-                <div key={group}>
-                  <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-muted/70">
-                    {group}
+              {rows.length > 0 && (
+                <>
+                  <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-muted/70">
+                    Top connections
                   </div>
-                  {groupRows.map((row) => {
-                    const index = rows.indexOf(row);
-                    const entity = row.entity;
+                  {rows.map((entity, index) => {
+                    const active = index === highlight;
                     return (
                       <button
-                        key={row.entity.id}
+                        key={entity.id}
                         type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          choose(entity);
-                        }}
+                        onClick={() => choose(entity)}
                         onMouseEnter={() => setHighlight(index)}
-                        className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors duration-150 ${
-                          index === highlight
-                            ? "bg-surface-2 text-text"
-                            : "text-muted"
+                        className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors duration-150 ${
+                          active
+                            ? "border-border bg-surface-2/60"
+                            : "border-transparent"
                         }`}
                       >
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: ENTITY_COLORS[row.entity.type] }}
-                        />
-                        <span className="truncate">{row.entity.name}</span>
-                        <span className="ml-auto shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] text-muted/70">
-                          {ENTITY_LABELS[row.entity.type]}
+                        <ResultThumb entity={entity} />
+                        <span className="min-w-0 flex-1">
+                          <span
+                            className={`block truncate text-[15px] font-medium ${
+                              active ? "text-accent" : "text-text"
+                            }`}
+                          >
+                            {entity.name}
+                          </span>
+                          <span className="block truncate text-xs text-muted">
+                            {entityMetaLine(entity)}
+                          </span>
                         </span>
+                        {active ? (
+                          <CornerDownLeft size={15} className="shrink-0 text-muted" />
+                        ) : (
+                          <ArrowUpRight size={15} className="shrink-0 text-muted/60" />
+                        )}
                       </button>
                     );
                   })}
-                </div>
-              );
-            })}
+                </>
+              )}
 
-          {live && (
-            <div className="border-t border-border px-3 pb-1 pt-2 text-[10px] text-muted/70">
-              Results from MusicBrainz
+              {recent.length > 0 && rows.length === 0 && (
+                <>
+                  <div className="px-3 pb-1 pt-3 text-[10px] font-medium uppercase tracking-[0.14em] text-muted/70">
+                    Recent searches
+                  </div>
+                  {recent.map((entity) => (
+                    <button
+                      key={entity.id}
+                      type="button"
+                      onClick={() => onPickRecent(entity.id)}
+                      className="flex w-full items-center gap-3 rounded px-3 py-2 text-left transition-colors duration-150 hover:bg-surface-2/60"
+                    >
+                      <History size={14} className="shrink-0 text-muted/70" />
+                      <span className="min-w-0 flex-1 truncate text-sm text-text">
+                        {entity.name}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted/70">
+                        {ENTITY_LABELS[entity.type]}
+                      </span>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
-          )}
+
+            {/* footer */}
+            <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-[10px] text-muted/70">
+              <div className="flex items-center gap-3">
+                <span>
+                  <kbd className="font-mono">↑↓</kbd> Navigate
+                </span>
+                <span>
+                  <kbd className="font-mono">⏎</kbd> Explore
+                </span>
+                <span>
+                  <kbd className="font-mono">esc</kbd> Close
+                </span>
+              </div>
+              <span className="uppercase tracking-[0.12em]">
+                {live ? "Live results" : "Demo results"}
+              </span>
+            </div>
+          </motion.div>
         </div>
       )}
-    </div>
+    </AnimatePresence>
   );
 }
