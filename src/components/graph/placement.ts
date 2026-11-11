@@ -12,12 +12,13 @@ export interface RingPositionsOptions {
   seed: string;
 }
 
-const BASE_RADIUS = 160;
-const RING_STEP = 110;
-const COLLISION_DISTANCE = 40;
+// spacing tuned for ~120px artwork tiles + captions
+const BASE_RADIUS = 330;
+const RING_STEP = 240;
+const COLLISION_DISTANCE = 175;
 const COLLISION_DISTANCE_SQ = COLLISION_DISTANCE * COLLISION_DISTANCE;
-const MAX_NUDGE_ITERATIONS = 8;
-const NUDGE_STEP = 12;
+const MAX_NUDGE_ITERATIONS = 10;
+const NUDGE_STEP = 36;
 
 export function hashString(input: string): number {
   let hash = 5381;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   decodeCursor,
+  discogsRefOf,
   edgeId,
   encodeCursor,
   normalizeArtist,
@@ -416,6 +417,60 @@ describe("release groups and recordings", () => {
     ).toBe(true);
     expect(page.entities.every((e) => e.type === "release")).toBe(true);
     expect(page.nextCursor).toBe(encodeCursor(UUID_A, raw.releases.length));
+  });
+
+  it("extracts a Discogs ref from url-rels and ignores other rels", () => {
+    const e = normalizeRelease(
+      lookupReleaseTracksFixture as unknown as MBRelease
+    );
+    expect(e.refs?.discogs).toEqual({
+      kind: "release",
+      id: 750726,
+      url: "https://www.discogs.com/release/750726",
+    });
+    const rg = normalizeReleaseGroup(
+      lookupReleaseGroupFixture as unknown as MBReleaseGroup
+    );
+    expect(rg.refs?.discogs).toEqual({
+      kind: "master",
+      id: 26647,
+      url: "https://www.discogs.com/master/26647",
+    });
+    const label = normalizeLabel(lookupLabelFixture as MBLabel);
+    expect(label.refs?.discogs).toMatchObject({ kind: "label", id: 609 });
+    const artist = normalizeArtist(lookupArtistFixture as MBArtist);
+    expect(artist.refs?.discogs).toMatchObject({
+      kind: "artist",
+      id: 161487,
+    });
+  });
+
+  it("omits refs when there is no usable discogs relation", () => {
+    expect(
+      discogsRefOf({
+        relations: [
+          {
+            type: "allmusic",
+            "target-type": "url",
+            url: { resource: "https://www.allmusic.com/x" },
+          },
+        ],
+      })
+    ).toBeUndefined();
+    expect(discogsRefOf({})).toBeUndefined();
+    expect(
+      discogsRefOf({
+        relations: [
+          {
+            type: "discogs",
+            "target-type": "url",
+            url: { resource: "https://example.com/release/1" },
+          },
+        ],
+      })
+    ).toBeUndefined();
+    const plain = normalizeLabel({ id: UUID_B, name: "X" } as MBLabel);
+    expect(plain.refs).toBeUndefined();
   });
 
   it("recordingConnections emits credited artists and releases, single page", () => {

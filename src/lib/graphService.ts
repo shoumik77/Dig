@@ -6,6 +6,7 @@ import type {
   SearchResults,
 } from "@/types/graph";
 import type {
+  DiscogsEnrichment,
   EntityType,
   MusicEntity,
   MusicRelationship,
@@ -22,6 +23,8 @@ export interface GraphService {
   getConnections(id: string, q?: ConnectionsQuery): Promise<ConnectionsPage>;
   searchEntities(query: string, q?: SearchQuery): Promise<SearchResults>;
   getDefaultRootId(): Promise<string | null>;
+  getEnrichment(id: string): Promise<DiscogsEnrichment | null>;
+  getCapabilities(): Promise<{ discogs: boolean }>;
 }
 
 interface Connection {
@@ -90,6 +93,14 @@ export function createMockGraphService(data: MockDataset): GraphService {
 
     getDefaultRootId() {
       return Promise.resolve("label:strictly-rhythm");
+    },
+
+    getEnrichment() {
+      return Promise.resolve(null);
+    },
+
+    getCapabilities() {
+      return Promise.resolve({ discogs: false });
     },
   };
 }

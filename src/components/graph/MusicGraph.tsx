@@ -6,11 +6,13 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
 import { ringPositions, type Position } from "./placement";
 import { cytoscapeStylesheet, ENTITY_COLORS } from "./graphStyles";
+import { edgeLabel, formatLength } from "@/lib/entityDisplay";
 import type { GraphState } from "@/lib/graphState";
-import type { EntityType, LabelMetadata } from "@/types/music";
+import type { EntityType, MusicEntity, RecordingMetadata } from "@/types/music";
 
 export interface MusicGraphHandle {
   fit(): void;
@@ -24,22 +26,37 @@ interface MusicGraphProps {
   onNodeTap(id: string): void;
   onBackgroundTap(): void;
   activeGenres?: ReadonlySet<string>;
+  /** when non-null, node types outside the set are dimmed */
+  visibleTypes?: ReadonlySet<EntityType> | null;
+  /** zoom percentage (0–100+); fires on init and every zoom */
+  onZoomChange?(pct: number): void;
+}
+
+interface BadgePos {
+  x: number;
+  y: number;
 }
 
 export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
-  function MusicGraph({ state, onNodeTap, onBackgroundTap, activeGenres }, ref) {
+  function MusicGraph(
+    { state, onNodeTap, onBackgroundTap, activeGenres, visibleTypes, onZoomChange },
+    ref
+  ) {
     const containerRef = useRef<HTMLDivElement>(null);
     const cyRef = useRef<Core | null>(null);
     const lastRootRef = useRef<string | null>(null);
     const ringCountRef = useRef<Map<string, number>>(new Map());
     const pendingFitRef = useRef(false);
+    const [rootBadge, setRootBadge] = useState<BadgePos | null>(null);
 
     const onNodeTapRef = useRef(onNodeTap);
     const onBackgroundTapRef = useRef(onBackgroundTap);
+    const onZoomChangeRef = useRef(onZoomChange);
     useEffect(() => {
       onNodeTapRef.current = onNodeTap;
       onBackgroundTapRef.current = onBackgroundTap;
-    }, [onNodeTap, onBackgroundTap]);
+      onZoomChangeRef.current = onZoomChange;
+    }, [onNodeTap, onBackgroundTap, onZoomChange]);
 
     // ── Cytoscape lifecycle ─────────────────────────────────────────────
     useEffect(() => {
@@ -47,7 +64,7 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
       const cy = cytoscape({
         container: containerRef.current,
         style: cytoscapeStylesheet,
-        minZoom: 0.3,
+        minZoom: 0.2,
         maxZoom: 2.5,
         wheelSensitivity: 0.2,
         boxSelectionEnabled: false,
@@ -67,6 +84,9 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
       cy.on("mouseout", "node", () => {
         if (containerRef.current) containerRef.current.style.cursor = "";
       });
+      cy.on("zoom", () => {
+        onZoomChangeRef.current?.(Math.round(cy.zoom() * 100));
+      });
 
       return () => {
         cy.removeAllListeners();
@@ -83,11 +103,19 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
         },
         zoomIn() {
           const cy = cyRef.current;
-          if (cy) cy.zoom({ level: cy.zoom() * 1.25, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
+          if (cy)
+            cy.zoom({
+              level: cy.zoom() * 1.25,
+              renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 },
+            });
         },
         zoomOut() {
           const cy = cyRef.current;
-          if (cy) cy.zoom({ level: cy.zoom() / 1.25, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
+          if (cy)
+            cy.zoom({
+              level: cy.zoom() / 1.25,
+              renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 },
+            });
         },
         center(id: string) {
           const cy = cyRef.current;
@@ -177,7 +205,12 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
           if (cy.getElementById(rel.id).empty()) {
             cy.add({
               group: "edges",
-              data: { id: rel.id, source: rel.source, target: rel.target },
+              data: {
+                id: rel.id,
+                source: rel.source,
+                target: rel.target,
+                label: edgeLabel(rel.type),
+              },
             });
           }
         }
@@ -217,7 +250,7 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
       lastRootRef.current = rootId;
     }, [state]);
 
-    // ── Visual classes: selection highlight, has-more, loading, genres ──
+    // ── Visual classes: selection, has-more, loading, genre + type dim ──
     useEffect(() => {
       const cy = cyRef.current;
       if (!cy) return;
@@ -226,25 +259,71 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
       cy.batch(() => {
         cy.elements().removeClass("selected neighbor dimmed has-more loading error");
 
+        // sync artwork data (enrichment arrives after the node was added)
+        for (const entity of Object.values(nodes)) {
+          const el = cy.getElementById(entity.id);
+          if (el.empty()) continue;
+          const image =
+            entity.enrichment?.discogs?.imageUrl ??
+            entity.enrichment?.discogs?.thumbUrl ??
+            "";
+          if (el.data("image") !== image) el.data("image", image);
+          el.toggleClass("imaged", image !== "");
+        }
+
+        const dimmedNodes = new Set<string>();
+
         if (selectedId) {
           const selected = cy.getElementById(selectedId);
           if (selected.nonempty()) {
             selected.addClass("selected");
             const neighborhood = selected.closedNeighborhood();
             neighborhood.addClass("neighbor");
-            cy.elements().difference(neighborhood.union(selected)).addClass("dimmed");
+            cy.elements()
+              .difference(neighborhood.union(selected))
+              .forEach((el) => {
+                el.addClass("dimmed");
+                if (el.isNode()) dimmedNodes.add(el.id());
+              });
           }
         }
 
-        // genre filter: dim label nodes with no overlapping genres
-        if (activeGenres && activeGenres.size > 0) {
+        // type filter: dim every node whose type is outside the set
+        if (visibleTypes) {
           for (const entity of Object.values(nodes)) {
-            if (entity.type !== "label") continue;
-            const genres = (entity.metadata as LabelMetadata | undefined)?.genres ?? [];
-            if (!genres.some((g) => activeGenres.has(g))) {
-              cy.getElementById(entity.id).addClass("dimmed");
+            if (visibleTypes.has(entity.type)) continue;
+            const el = cy.getElementById(entity.id);
+            if (el.nonempty()) {
+              el.addClass("dimmed");
+              dimmedNodes.add(entity.id);
             }
           }
+        }
+
+        // genre filter: dim nodes that HAVE genres but match none;
+        // nodes without genre data stay undimmed
+        if (activeGenres && activeGenres.size > 0) {
+          for (const entity of Object.values(nodes)) {
+            const genres = entity.metadata?.genres;
+            if (!genres?.length) continue;
+            if (!genres.some((g) => activeGenres.has(g))) {
+              cy.getElementById(entity.id).addClass("dimmed");
+              dimmedNodes.add(entity.id);
+            }
+          }
+        }
+
+        // edges fade with either dimmed endpoint (but keep selection edges)
+        if (dimmedNodes.size > 0) {
+          cy.edges().forEach((edge) => {
+            if (edge.hasClass("neighbor")) return;
+            if (
+              dimmedNodes.has(edge.source().id()) ||
+              dimmedNodes.has(edge.target().id())
+            ) {
+              edge.addClass("dimmed");
+            }
+          });
         }
 
         for (const [id, expansion] of Object.entries(expansions)) {
@@ -255,7 +334,37 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
           if (expansion.status === "error") el.addClass("error");
         }
       });
-    }, [state, activeGenres]);
+    }, [state, activeGenres, visibleTypes]);
+
+    // ── "START HERE" badge tracking the root node's rendered position ───
+    const rootId = state.rootId;
+    useEffect(() => {
+      const cy = cyRef.current;
+      if (!cy || !rootId) {
+        setRootBadge(null);
+        return;
+      }
+      let raf = 0;
+      const update = () => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          const el = cy.getElementById(rootId);
+          if (el.empty()) {
+            setRootBadge(null);
+            return;
+          }
+          const rp = el.renderedPosition();
+          const h = el.renderedHeight();
+          setRootBadge({ x: rp.x, y: rp.y - h / 2 - 14 });
+        });
+      };
+      update();
+      cy.on("render pan zoom resize position", update);
+      return () => {
+        cancelAnimationFrame(raf);
+        cy.off("render pan zoom resize position", update);
+      };
+    }, [rootId, state]);
 
     return (
       <div className="absolute inset-0">
@@ -267,25 +376,43 @@ export const MusicGraph = forwardRef<MusicGraphHandle, MusicGraphProps>(
           role="img"
           aria-label="Music relationship graph"
         />
+        {rootBadge && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap border border-border bg-bg px-2 py-1 text-[9px] font-medium tracking-[0.14em] text-accent"
+            style={{ left: rootBadge.x, top: rootBadge.y }}
+          >
+            START HERE
+          </div>
+        )}
       </div>
     );
   }
 );
 
-function nodeDef(entity: {
-  id: string;
-  name: string;
-  type: EntityType;
-  provenance: string;
-}): ElementDefinition {
+function nodeDef(entity: MusicEntity): ElementDefinition {
+  const image =
+    entity.enrichment?.discogs?.imageUrl ??
+    entity.enrichment?.discogs?.thumbUrl ??
+    "";
+  // recording pill text: "Original mix · 6:32"
+  const lengthMs =
+    entity.type === "recording"
+      ? (entity.metadata as RecordingMetadata | undefined)?.lengthMs
+      : undefined;
+  const name =
+    entity.type === "recording" && typeof lengthMs === "number"
+      ? `${entity.name} · ${formatLength(lengthMs)}`
+      : entity.name;
   return {
     group: "nodes",
-    classes: entity.type,
+    classes: image ? `${entity.type} imaged` : entity.type,
     data: {
       id: entity.id,
-      name: entity.name,
+      name,
       type: entity.type,
       provenance: entity.provenance,
+      image,
       accent: ENTITY_COLORS[entity.type],
     },
   };

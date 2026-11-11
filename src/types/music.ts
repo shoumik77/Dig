@@ -5,6 +5,14 @@ export type EntityType =
   | "release"
   | "recording";
 
+export const ENTITY_TYPES: readonly EntityType[] = [
+  "label",
+  "artist",
+  "release-group",
+  "release",
+  "recording",
+];
+
 export type RelationshipType =
   | "released_on"
   | "performed_by"
@@ -33,6 +41,7 @@ export interface ArtistMetadata {
   country?: string;
   artistType?: string;
   disambiguation?: string;
+  genres?: string[];
 }
 
 export interface ReleaseGroupMetadata {
@@ -41,6 +50,7 @@ export interface ReleaseGroupMetadata {
   firstReleaseDate?: string;
   artistCredit?: string;
   disambiguation?: string;
+  genres?: string[];
 }
 
 export interface RecordingMetadata {
@@ -49,6 +59,7 @@ export interface RecordingMetadata {
   artistCredit?: string;
   disambiguation?: string;
   video?: boolean;
+  genres?: string[];
 }
 
 export interface ReleaseTrack {
@@ -73,6 +84,7 @@ export interface ReleaseMetadata {
   artistCredit?: string;
   /** ordered by medium position then track position */
   tracks?: ReleaseTrack[];
+  genres?: string[];
 }
 
 export type EntityMetadata =
@@ -81,6 +93,40 @@ export type EntityMetadata =
   | ReleaseGroupMetadata
   | ReleaseMetadata
   | RecordingMetadata;
+
+export type DiscogsKind = "release" | "master" | "artist" | "label";
+
+export interface DiscogsRef {
+  kind: DiscogsKind;
+  id: number;
+  url: string;
+}
+
+export interface DiscogsEnrichment {
+  kind: DiscogsKind;
+  id: number;
+  url: string;
+  imageUrl?: string;
+  thumbUrl?: string;
+  genres?: string[];
+  styles?: string[];
+  year?: number;
+  country?: string;
+  formats?: string[];
+  credits?: {
+    name: string;
+    role: string;
+    discogsArtistId?: number;
+    tracks?: string;
+  }[];
+  videos?: { url: string; title: string; durationSec?: number }[];
+  community?: { have: number; want: number };
+  numForSale?: number;
+  lowestPrice?: number;
+  profile?: string;
+  realName?: string;
+  urls?: string[];
+}
 
 export interface MusicEntity {
   id: string;
@@ -93,6 +139,8 @@ export interface MusicEntity {
     id: string;
     url: string;
   };
+  refs?: { discogs?: DiscogsRef };
+  enrichment?: { discogs?: DiscogsEnrichment; fetchedAt?: number };
 }
 
 export interface MusicRelationship {

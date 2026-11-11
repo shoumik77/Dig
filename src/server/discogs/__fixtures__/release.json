@@ -1,0 +1,113 @@
+{
+  "id": 750726,
+  "title": "Deep Inside",
+  "year": 1995,
+  "released": "1995",
+  "country": "Germany",
+  "uri": "https://www.discogs.com/release/750726-Hardrive-Deep-Inside",
+  "master_id": 401133,
+  "genres": [
+    "Electronic"
+  ],
+  "styles": [
+    "House"
+  ],
+  "thumb": "https://i.discogs.com/VQqY25AekevGYJngOswB6Gt3F558XgZ5jLgY1YdX50g/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc1MDcy/Ni0xMTU1MDQyMTYz/LmpwZWc.jpeg",
+  "community": {
+    "have": 30,
+    "want": 729
+  },
+  "num_for_sale": 0,
+  "lowest_price": null,
+  "images": [
+    {
+      "type": "primary",
+      "uri": "https://i.discogs.com/ayFoOzOZLHD-pCj2-Nl9mHnbd8GFAauX0UNxZf62Pso/rs:fit/g:sm/q:90/h:300/w:300/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc1MDcy/Ni0xMTU1MDQyMTYz/LmpwZWc.jpeg",
+      "resource_url": "https://i.discogs.com/ayFoOzOZLHD-pCj2-Nl9mHnbd8GFAauX0UNxZf62Pso/rs:fit/g:sm/q:90/h:300/w:300/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc1MDcy/Ni0xMTU1MDQyMTYz/LmpwZWc.jpeg",
+      "uri150": "https://i.discogs.com/VQqY25AekevGYJngOswB6Gt3F558XgZ5jLgY1YdX50g/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc1MDcy/Ni0xMTU1MDQyMTYz/LmpwZWc.jpeg",
+      "width": 300,
+      "height": 300
+    }
+  ],
+  "videos": [
+    {
+      "uri": "https://www.youtube.com/watch?v=PyCJLXXibUI",
+      "title": "Hardrive - Deep Inside - 1993",
+      "description": "Hardrive - Deep Inside - 1993\nNo copyright Infringement Intended. \n\nAll content belongs to it's rightful owners.\nNot for monetary gain. For entertainment purposes only",
+      "duration": 391,
+      "embed": true
+    },
+    {
+      "uri": "https://www.youtube.com/watch?v=yF9jtkTip3E",
+      "title": "Hardrive | Just Believe",
+      "description": "Engineer – Erick \"More\" Morillo - Producer – \"Little\" Louie Vega*\nStrictly Rhythm – SR EP2WHITE Reissue, Remastered, Repress, White | 2020\nOriginally Released - Strictly Rhythm – SR EP2 | 1993\nVinyl Rips On This Channel Are Recorded From The Original \"12\"",
+      "duration": 355,
+      "embed": true
+    },
+    {
+      "uri": "https://vimeo.com/12345",
+      "title": "Not youtube",
+      "duration": 10
+    }
+  ],
+  "extraartists": [
+    {
+      "name": "Louie Vega",
+      "anv": "\"Little\" Louie Vega",
+      "join": "",
+      "role": "Producer",
+      "tracks": "",
+      "id": 161487,
+      "resource_url": "https://api.discogs.com/artists/161487"
+    }
+  ],
+  "artists": [
+    {
+      "name": "Hardrive",
+      "anv": "",
+      "join": "",
+      "role": "",
+      "tracks": "",
+      "id": 16253,
+      "resource_url": "https://api.discogs.com/artists/16253",
+      "thumbnail_url": "https://i.discogs.com/vVvoWGWQoZ8kXNY-ZoEoLAhTuSs4geO1YXUXU42Net8/rs:fit/g:sm/q:90/h:332/w:267/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE2MjUz/LTE1MzQ1MDkwNjUt/NTI5NS5qcGVn.jpeg"
+    }
+  ],
+  "labels": [
+    {
+      "name": "ZYX Music",
+      "catno": "ZYX 8010-12",
+      "entity_type": "1",
+      "entity_type_name": "Label",
+      "id": 561,
+      "resource_url": "https://api.discogs.com/labels/561",
+      "thumbnail_url": "https://i.discogs.com/l7GwQFzMSBUYyQBsmWg8nrB0WXmzoHybupPs5-_Y7ro/rs:fit/g:sm/q:90/h:91/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9MLTU2MS0x/NzA1NjQyODUzLTUw/NDIucG5n.jpeg"
+    }
+  ],
+  "formats": [
+    {
+      "name": "Vinyl",
+      "qty": "1",
+      "descriptions": [
+        "12\""
+      ]
+    }
+  ],
+  "tracklist": [
+    {
+      "position": "A1",
+      "title": "Deep Inside (The Remix)",
+      "duration": "7:55"
+    },
+    {
+      "position": "A2",
+      "title": "Deep Inside",
+      "duration": "6:31"
+    },
+    {
+      "position": "A3",
+      "title": "No Cure",
+      "duration": "6:08"
+    }
+  ]
+}

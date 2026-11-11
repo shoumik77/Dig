@@ -1,16 +1,25 @@
 "use client";
 
-import { Bookmark, Compass, Disc3, History, Search } from "lucide-react";
+import { ArrowRight, Bookmark, History, Plus, X } from "lucide-react";
 import { ENTITY_COLORS } from "@/components/graph/graphStyles";
 import type { GraphMode } from "@/lib/graphServiceRegistry";
+import type { CrateSummary } from "@/types/crate";
 import type { MusicEntity } from "@/types/music";
 
-const GENRES = ["House", "UK Garage", "French House", "Disco"];
+export const DEMO_GENRES = ["House", "UK Garage", "French House", "Disco"];
 
 const MODE_CAPTIONS: Record<GraphMode, string> = {
   demo: "Illustrative demo data",
   live: "Live metadata from MusicBrainz",
 };
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted/80">
+      {children}
+    </div>
+  );
+}
 
 export function ModeSwitch({
   mode,
@@ -20,7 +29,11 @@ export function ModeSwitch({
   onModeChange(mode: GraphMode): void;
 }) {
   return (
-    <div role="radiogroup" aria-label="Data source" className="flex gap-1">
+    <div
+      role="radiogroup"
+      aria-label="Data source"
+      className="flex gap-0.5 rounded-md border border-border bg-bg p-0.5"
+    >
       {(["demo", "live"] as const).map((m) => (
         <button
           key={m}
@@ -28,10 +41,8 @@ export function ModeSwitch({
           role="radio"
           aria-checked={mode === m}
           onClick={() => onModeChange(m)}
-          className={`flex-1 rounded px-3 py-1.5 text-xs capitalize transition-colors duration-150 ${
-            mode === m
-              ? "bg-surface-2 text-zinc-100"
-              : "text-zinc-400 hover:bg-surface-2 hover:text-zinc-100"
+          className={`flex-1 rounded px-3 py-1.5 text-xs capitalize transition-colors duration-150 enabled:active:scale-[0.96] motion-safe:transition-transform ${
+            mode === m ? "bg-surface-2 text-text" : "text-muted hover:text-text"
           }`}
         >
           {m === "demo" ? "Demo" : "Live"}
@@ -41,119 +52,170 @@ export function ModeSwitch({
   );
 }
 
-interface SidebarProps {
-  recent: MusicEntity[];
-  onSelectRecent(id: string): void;
-  onSearchClick(): void;
-  activeGenres: ReadonlySet<string>;
-  onToggleGenre(genre: string): void;
+interface NavDrawerProps {
   mode: GraphMode;
   onModeChange(mode: GraphMode): void;
-  genresDisabled?: boolean;
+  /** chips to render — demo list in demo mode, Discogs-derived in live */
+  genres: string[];
+  activeGenres: ReadonlySet<string>;
+  onToggleGenre(genre: string): void;
+  /** small grey suffix on the Genres header, e.g. "(demo only)" */
+  genreCaption?: string;
+  /** shown when `genres` is empty */
+  genreEmptyText?: string;
+  crates: CrateSummary[];
+  onOpenCrates(): void;
+  onOpenCrate(id: string): void;
+  onCreateCrate(): void;
+  recent: MusicEntity[];
+  onSelectRecent(id: string): void;
+  onClose(): void;
 }
 
-export function Sidebar({
-  recent,
-  onSelectRecent,
-  onSearchClick,
-  activeGenres,
-  onToggleGenre,
+/** Content of the expanded rail drawer — mode, genres, crates, recents. */
+export function NavDrawer({
   mode,
   onModeChange,
-  genresDisabled = false,
-}: SidebarProps) {
+  genres,
+  activeGenres,
+  onToggleGenre,
+  genreCaption,
+  genreEmptyText,
+  crates,
+  onOpenCrates,
+  onOpenCrate,
+  onCreateCrate,
+  recent,
+  onSelectRecent,
+  onClose,
+}: NavDrawerProps) {
   return (
-    <div className="flex h-full flex-col bg-surface">
-      {/* brand */}
-      <div className="flex items-center gap-2.5 border-b border-border px-4 py-4">
-        <Disc3 size={22} style={{ color: ENTITY_COLORS.label }} />
-        <div>
-          <div className="text-base font-semibold leading-tight">Dig</div>
-          <div className="text-[11px] text-zinc-500">Follow the sound.</div>
-        </div>
-      </div>
-
-      {/* nav */}
-      <nav className="border-b border-border px-2 py-2 text-sm">
-        <div className="flex items-center gap-2 rounded bg-surface-2 px-3 py-2 text-zinc-100">
-          <Compass size={15} className="text-zinc-400" /> Dig Mode
-        </div>
-        <div className="px-1 pb-1">
-          <ModeSwitch mode={mode} onModeChange={onModeChange} />
-          <div className="px-2 pt-1 text-[11px] text-zinc-500">
-            {MODE_CAPTIONS[mode]}
-          </div>
-        </div>
+    <div className="flex h-full flex-col overflow-y-auto overscroll-contain bg-surface">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
+        <span className="text-sm font-semibold tracking-tight">Menu</span>
         <button
           type="button"
-          onClick={onSearchClick}
-          className="flex w-full items-center gap-2 rounded px-3 py-2 text-zinc-400 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100"
+          onClick={onClose}
+          aria-label="Close menu"
+          className="rounded p-1.5 text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
         >
-          <Search size={15} /> Search
+          <X size={15} />
         </button>
-        <div className="flex w-full items-center gap-2 rounded px-3 py-2 text-zinc-500">
-          <Bookmark size={15} /> Saved Crates
-          <span className="ml-auto text-xs">0</span>
-          <span className="rounded border border-border px-1 py-0.5 text-[9px] uppercase text-zinc-500">
-            Soon
-          </span>
-        </div>
-      </nav>
-
-      {/* recently explored */}
-      <div className="border-b border-border px-4 py-3">
-        <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-          <History size={11} /> Recently Explored
-        </div>
-        {recent.length === 0 && (
-          <div className="text-xs text-zinc-600">Nothing yet</div>
-        )}
-        {recent.map((entity) => (
-          <button
-            key={entity.id}
-            type="button"
-            onClick={() => onSelectRecent(entity.id)}
-            className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm text-zinc-300 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100"
-          >
-            <span
-              className="h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: ENTITY_COLORS[entity.type] }}
-            />
-            <span className="truncate">{entity.name}</span>
-          </button>
-        ))}
       </div>
 
-      {/* genre filters */}
-      <div className="px-4 py-3">
-        <div className="mb-2 flex items-baseline gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-          Genres
-          {genresDisabled && (
-            <span className="normal-case tracking-normal text-zinc-600">
-              (demo only)
-            </span>
+      <div className="px-4 pt-4">
+        <div className="mb-2">
+          <SectionLabel>Data source</SectionLabel>
+        </div>
+        <ModeSwitch mode={mode} onModeChange={onModeChange} />
+        <div className="px-1 pt-1.5 text-[11px] text-muted/80">
+          {MODE_CAPTIONS[mode]}
+        </div>
+      </div>
+
+      <div className="px-4 pt-5">
+        <div className="mb-2 flex items-baseline gap-1.5">
+          <SectionLabel>Genres</SectionLabel>
+          {genreCaption && (
+            <span className="text-[10px] text-muted/60">{genreCaption}</span>
           )}
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {GENRES.map((genre) => {
-            const active = activeGenres.has(genre);
-            return (
-              <button
-                key={genre}
-                type="button"
-                disabled={genresDisabled}
-                onClick={() => onToggleGenre(genre)}
-                className={`rounded-full border px-2.5 py-1 text-xs transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
-                  active
-                    ? "border-label text-label"
-                    : "border-border text-zinc-400 hover:bg-surface-2 hover:text-zinc-200"
-                }`}
-              >
-                {genre}
-              </button>
-            );
-          })}
+        {genres.length === 0 ? (
+          genreEmptyText && (
+            <div className="text-xs text-muted/70">{genreEmptyText}</div>
+          )
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {genres.map((genre) => {
+              const active = activeGenres.has(genre);
+              return (
+                <button
+                  key={genre}
+                  type="button"
+                  onClick={() => onToggleGenre(genre)}
+                  aria-pressed={active}
+                  className={`rounded-full border px-2.5 py-1 text-xs transition-colors duration-150 ${
+                    active
+                      ? "border-accent/60 bg-accent/10 text-accent"
+                      : "border-border text-muted hover:border-muted/40 hover:text-text"
+                  }`}
+                >
+                  {genre}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="px-4 pt-5">
+        <div className="mb-1 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Bookmark size={11} className="text-muted/80" />
+            <SectionLabel>Crates</SectionLabel>
+          </div>
+          <button
+            type="button"
+            onClick={onCreateCrate}
+            aria-label="New crate"
+            className="rounded p-1 text-muted/80 transition-colors duration-150 hover:text-text"
+          >
+            <Plus size={13} />
+          </button>
         </div>
+        {crates.length === 0 ? (
+          <div className="text-xs text-muted/70">
+            No crates yet — save entities from the details panel
+          </div>
+        ) : (
+          <>
+            {crates.slice(0, 5).map((crate) => (
+              <button
+                key={crate.id}
+                type="button"
+                onClick={() => onOpenCrate(crate.id)}
+                className="flex w-full items-center gap-2 rounded px-1 py-1.5 text-left text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
+              >
+                <span className="truncate">{crate.name}</span>
+                <span className="ml-auto shrink-0 text-xs text-muted/70">
+                  {crate.itemCount}
+                </span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={onOpenCrates}
+              className="mt-1 flex items-center gap-1 px-1 py-1 text-xs text-muted/80 transition-colors duration-150 hover:text-text"
+            >
+              All crates <ArrowRight size={11} />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="px-4 py-5">
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <History size={11} className="text-muted/80" />
+          <SectionLabel>Recently Explored</SectionLabel>
+        </div>
+        {recent.length === 0 ? (
+          <div className="text-xs text-muted/70">Nothing yet</div>
+        ) : (
+          recent.map((entity) => (
+            <button
+              key={entity.id}
+              type="button"
+              onClick={() => onSelectRecent(entity.id)}
+              className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: ENTITY_COLORS[entity.type] }}
+              />
+              <span className="truncate">{entity.name}</span>
+            </button>
+          ))
+        )}
       </div>
     </div>
   );

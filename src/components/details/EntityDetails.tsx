@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { Bookmark, ExternalLink, X } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import { ArrowUpRight, ExternalLink, Plus, X } from "lucide-react";
 import type { GraphState } from "@/lib/graphState";
 import { getExpansion, hasMore, isExpanded } from "@/lib/graphState";
 import { ENTITY_COLORS, ENTITY_LABELS } from "@/components/graph/graphStyles";
+import { SaveToCrateMenu } from "@/components/crates/SaveToCrateMenu";
+import {
+  artworkUrl,
+  entityMetaLine,
+  formatLength,
+  initialsOf,
+} from "@/lib/entityDisplay";
+import type { Crate, CrateSummary } from "@/types/crate";
 import type {
+  EntityType,
   MusicEntity,
   MusicRelationship,
-  RelationshipType,
   ReleaseTrack,
 } from "@/types/music";
 
@@ -16,110 +24,133 @@ interface EntityDetailsProps {
   state: GraphState;
   entity: MusicEntity | null;
   onSelectNode(id: string): void;
+  /** select + pan the canvas to the node */
+  onSelectAndCenter(id: string): void;
   onExpand(id: string): void;
   onLoadMore(id: string): void;
   onClose(): void;
+  capabilities?: { discogs: boolean };
+  crates?: CrateSummary[];
+  /** crateIds already known to contain `entity` */
+  savedCrateIds?: ReadonlySet<string>;
+  onSaveToCrate?(crateId: string, entity: MusicEntity): Promise<boolean>;
+  onCreateCrate?(name: string): Promise<Crate | undefined>;
 }
 
-interface MetaField {
-  label: string;
-  get(meta: Record<string, unknown>): unknown;
-  demoOnly?: boolean;
-}
-
-function formatLength(ms: number): string {
-  const total = Math.round(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-const META_FIELDS: Record<MusicEntity["type"], MetaField[]> = {
-  label: [
-    { label: "Country", get: (m) => m.country },
-    { label: "Founded", get: (m) => m.foundedDate ?? m.founded },
-    { label: "Location", get: (m) => m.location, demoOnly: true },
-    { label: "Genres", get: (m) => m.genres, demoOnly: true },
-    { label: "Description", get: (m) => m.disambiguation },
-    { label: "Also known as", get: (m) => m.aliases },
-  ],
-  artist: [
-    { label: "Country", get: (m) => m.country },
-    { label: "Type", get: (m) => m.artistType },
-    { label: "Location", get: (m) => m.location, demoOnly: true },
-    { label: "Real name", get: (m) => m.realName, demoOnly: true },
-    { label: "Description", get: (m) => m.disambiguation },
-    { label: "Also known as", get: (m) => m.aliases },
-  ],
-  "release-group": [
-    {
-      label: "Type",
-      get: (m) =>
-        [m.primaryType, ...((m.secondaryTypes as string[] | undefined) ?? [])]
-          .filter(Boolean)
-          .join(", ") || undefined,
-    },
-    { label: "First released", get: (m) => m.firstReleaseDate },
-    { label: "Credited artists", get: (m) => m.artistCredit },
-    { label: "Description", get: (m) => m.disambiguation },
-  ],
-  release: [
-    { label: "Date", get: (m) => m.date ?? m.year },
-    { label: "Country", get: (m) => m.country },
-    { label: "Catalogue no.", get: (m) => m.catalogNumber },
-    { label: "Format", get: (m) => m.format },
-    { label: "Status", get: (m) => m.status },
-    { label: "Credited artists", get: (m) => m.artistCredit },
-  ],
-  recording: [
-    {
-      label: "Length",
-      get: (m) => {
-        const ms = m.lengthMs as number | undefined;
-        return typeof ms === "number" && Number.isFinite(ms)
-          ? formatLength(ms)
-          : undefined;
-      },
-    },
-    { label: "ISRC", get: (m) => m.isrcs },
-    { label: "Credited artists", get: (m) => m.artistCredit },
-    { label: "Description", get: (m) => m.disambiguation },
-    { label: "Video", get: (m) => (m.video === true ? "Yes" : undefined) },
-  ],
+const TYPE_TAGLINES: Record<EntityType, string> = {
+  label: "A label on the map. Follow the records that shaped the floor.",
+  artist: "A name behind the sound. Follow the records and labels around it.",
+  "release-group": "A record in the web. Follow its connections to keep digging.",
+  release: "A record in the web. Follow its connections to keep digging.",
+  recording: "A track in the web. Follow it back to the record.",
 };
 
-/** Human label for a relationship group as seen from `entity`'s perspective. */
-function groupLabel(type: RelationshipType, outgoing: boolean): string {
-  switch (type) {
-    case "released_on":
-      return outgoing ? "Released on" : "Releases";
-    case "performed_by":
-      return outgoing ? "Performed by" : "Appears on";
-    case "produced_by":
-      return outgoing ? "Produced by" : "Produced";
-    case "remixed_by":
-      return outgoing ? "Remixed by" : "Remixed";
-    case "credited_to":
-      return outgoing ? "Credited to" : "Credited on";
-    case "version_of":
-      return outgoing ? "Version of" : "Versions";
-    case "appears_on":
-      return outgoing ? "Appears on" : "Tracks";
+function neighbors(
+  state: GraphState,
+  id: string
+): { rel: MusicRelationship; other: MusicEntity }[] {
+  const out: { rel: MusicRelationship; other: MusicEntity }[] = [];
+  for (const rel of Object.values(state.edges)) {
+    const otherId =
+      rel.source === id ? rel.target : rel.target === id ? rel.source : null;
+    if (!otherId) continue;
+    const other = state.nodes[otherId];
+    if (other) out.push({ rel, other });
   }
+  return out;
 }
 
+function Artwork({
+  entity,
+  size,
+  className = "",
+}: {
+  entity: MusicEntity;
+  size: number;
+  className?: string;
+}) {
+  const image = artworkUrl(entity);
+  const round = entity.type === "artist" ? "rounded-full" : "rounded-md";
+  if (image) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={image}
+        alt={entity.name}
+        referrerPolicy="no-referrer"
+        style={{ width: size, height: size }}
+        className={`shrink-0 object-cover outline-1 -outline-offset-1 outline-white/10 ${round} ${className}`}
+      />
+    );
+  }
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: size,
+        height: size,
+        borderColor: `${ENTITY_COLORS[entity.type]}66`,
+        color: ENTITY_COLORS[entity.type],
+      }}
+      className={`flex shrink-0 items-center justify-center border bg-surface-2 text-xl font-medium ${round} ${className}`}
+    >
+      {initialsOf(entity.name)}
+    </span>
+  );
+}
+
+function RowThumb({ entity, onClick }: { entity: MusicEntity; onClick(): void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-left transition-colors duration-150 hover:bg-surface-2/60"
+    >
+      <Artwork entity={entity} size={44} className="rounded" />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium text-text">
+          {entity.name}
+        </span>
+        <span className="block truncate text-xs text-muted">
+          {entityMetaLine(entity).split("·").slice(1).join("·").trim() ||
+            ENTITY_LABELS[entity.type]}
+        </span>
+      </span>
+      <ArrowUpRight
+        size={14}
+        className="shrink-0 text-muted/60 transition-colors duration-150 group-hover:text-text"
+      />
+    </button>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted/70">
+      {children}
+    </div>
+  );
+}
 
 export function EntityDetails({
   state,
   entity,
   onSelectNode,
+  onSelectAndCenter,
   onExpand,
   onLoadMore,
   onClose,
+  capabilities,
+  crates,
+  savedCrateIds,
+  onSaveToCrate,
+  onCreateCrate,
 }: EntityDetailsProps) {
-  const [crateHint, setCrateHint] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   if (!entity) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-zinc-500">
+      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted/70">
         Select a node to see details
       </div>
     );
@@ -136,247 +167,536 @@ export function EntityDetails({
   const providerLabel =
     entity.provenance === "verified" ? "MusicBrainz" : "demo data";
 
-  // group touching relationships by (type, direction)
   const meta = (entity.metadata ?? {}) as Record<string, unknown>;
-  const tracks = (
-    entity.type === "release" ? (meta.tracks as ReleaseTrack[] | undefined) : undefined
-  ) ?? [];
-
-  const groups = new Map<string, { label: string; items: { rel: MusicRelationship; other: MusicEntity }[] }>();
-  for (const rel of Object.values(state.edges)) {
-    const outgoing = rel.source === entity.id;
-    const incoming = rel.target === entity.id;
-    if (!outgoing && !incoming) continue;
-    // the Tracklist section already lists these in order
-    if (incoming && rel.type === "appears_on" && tracks.length > 0) continue;
-    const otherId = outgoing ? rel.target : rel.source;
-    const other = state.nodes[otherId];
-    if (!other) continue;
-    const key = `${rel.type}:${outgoing ? "out" : "in"}`;
-    const group = groups.get(key) ?? {
-      label: groupLabel(rel.type, outgoing),
-      items: [],
-    };
-    group.items.push({ rel, other });
-    groups.set(key, group);
-  }
-  const connectionGroups = [...groups.values()].sort((a, b) =>
-    a.label.localeCompare(b.label)
-  );
-
+  const discogs = entity.enrichment?.discogs;
   const verified = entity.provenance === "verified";
-  const metaFields = META_FIELDS[entity.type].filter(
-    (f) => !(f.demoOnly && verified)
-  );
+  const discogsEnabled = capabilities?.discogs === true;
+  const enrichFetched = entity.enrichment !== undefined;
+  const discogsLoading =
+    discogsEnabled && verified && !enrichFetched && entity.type !== "recording";
 
-  function metaValue(v: unknown): string | null {
-    if (v === undefined || v === null || v === "") return null;
-    if (Array.isArray(v)) return v.length ? v.join(", ") : null;
-    return String(v);
+  const tracks =
+    (entity.type === "release"
+      ? (meta.tracks as ReleaseTrack[] | undefined)
+      : undefined) ?? [];
+
+  const nearby = neighbors(state, entity.id);
+  const byType = (t: EntityType) =>
+    nearby.filter((n) => n.other.type === t).map((n) => n.other);
+
+  const labelNeighbors = byType("label");
+  const artistNeighbors = byType("artist");
+  const releaseNeighbors = nearby
+    .filter((n) => n.other.type === "release" || n.other.type === "release-group")
+    .map((n) => n.other);
+  const genreChips = [
+    ...new Set([
+      ...((meta.genres as string[] | undefined) ?? []),
+      ...(discogs?.genres ?? []),
+      ...(discogs?.styles ?? []),
+    ]),
+  ].slice(0, 5);
+
+  // "strongest connection" for the primary CTA
+  const followTarget: MusicEntity | null = (() => {
+    if (entity.type === "release" || entity.type === "release-group") {
+      return (
+        nearby.find((n) => n.other.type === "artist")?.other ??
+        labelNeighbors[0] ??
+        null
+      );
+    }
+    if (entity.type === "recording") return releaseNeighbors[0] ?? null;
+    return null;
+  })();
+
+  const ctaLabel = (() => {
+    if (entity.type === "label") return "Explore label";
+    if (entity.type === "release" || entity.type === "release-group")
+      return followTarget ? `Follow ${followTarget.type === "artist" ? "the artist" : "the label"}` : null;
+    if (entity.type === "recording") return followTarget ? "Open release" : null;
+    return null;
+  })();
+
+  function runCta() {
+    if (entity!.type === "label") {
+      onExpand(entity!.id);
+      onSelectAndCenter(entity!.id);
+    } else if (followTarget) {
+      onSelectAndCenter(followTarget.id);
+    }
   }
 
-  function flashCrateHint() {
-    setCrateHint(true);
-    setTimeout(() => setCrateHint(false), 1500);
-  }
+  const labelCardCaption = [meta.location, meta.founded]
+    .filter(Boolean)
+    .join(" / ");
+  const releaseYearish = meta.year ?? meta.date ?? meta.firstReleaseDate;
+  const releaseYear =
+    releaseYearish != null ? String(releaseYearish).slice(0, 4) : null;
+  const releaseFormatLine = [meta.format, meta.country]
+    .filter(Boolean)
+    .join(" · ");
+
+  const eyebrow =
+    entity.type === "release" && meta.catalogNumber
+      ? `${ENTITY_LABELS[entity.type].toUpperCase()} / ${String(meta.catalogNumber).toUpperCase()}`
+      : ENTITY_LABELS[entity.type].toUpperCase();
+
+  const subtitle = (() => {
+    const location =
+      (meta.location as string | undefined) ??
+      (meta.country as string | undefined);
+    switch (entity.type) {
+      case "label": {
+        const founded = meta.founded ?? meta.foundedDate;
+        const place = [meta.location, meta.country].filter(Boolean).join(", ");
+        return [place || null, founded && `Founded ${founded}`]
+          .filter(Boolean)
+          .join(" · ");
+      }
+      case "artist":
+        return [location, (meta.artistType as string | undefined) ?? "DJ / Producer"]
+          .filter(Boolean)
+          .join(" · ");
+      case "release":
+      case "release-group":
+        return (
+          (meta.artistCredit as string | undefined) ??
+          artistNeighbors[0]?.name ??
+          ""
+        );
+      case "recording":
+        return (meta.artistCredit as string | undefined) ?? "";
+    }
+  })();
+
+  const description =
+    discogs?.profile ??
+    (meta.disambiguation as string | undefined) ??
+    TYPE_TAGLINES[entity.type];
+
+  const keepDigging = Object.values(state.nodes)
+    .filter(
+      (n) =>
+        n.id !== entity.id &&
+        (n.type === "release" || n.type === "release-group")
+    )
+    .slice(0, 6);
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
-      {/* header */}
-      <div className="flex items-start justify-between gap-2 p-4 pb-3">
-        <div>
-          <span
-            className="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
-            style={{
-              color: ENTITY_COLORS[entity.type],
-              backgroundColor: `${ENTITY_COLORS[entity.type]}1f`,
-            }}
-          >
-            {ENTITY_LABELS[entity.type]}
-          </span>
-          <h2 className="mt-2 text-lg font-semibold leading-tight">{entity.name}</h2>
-          {entity.provenance === "demo" && (
-            <span className="mt-1 inline-block rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-500">
-              Demo data
-            </span>
-          )}
-          {verified && entity.source && (
-            <a
-              href={entity.source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="View on MusicBrainz"
-              className="mt-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] text-zinc-400 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-200"
-            >
-              MusicBrainz <ExternalLink size={9} />
-            </a>
-          )}
-        </div>
+    <motion.div
+      key={entity.id}
+      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="flex h-full flex-col overflow-y-auto overscroll-contain bg-surface"
+    >
+      {/* eyebrow + close */}
+      <div className="flex items-start justify-between gap-2 px-4 pt-4">
+        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted/80">
+          {eyebrow}
+        </span>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close details"
-          className="rounded p-1 text-zinc-500 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-200"
+          className="rounded-md border border-border p-1.5 text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
         >
-          <X size={16} />
+          <X size={13} />
         </button>
       </div>
 
-      {/* metadata */}
-      <dl className="border-t border-border px-4 py-3">
-        {metaFields.map((field) => {
-          const value = metaValue(field.get(meta));
-          return (
-            <div key={field.label} className="mb-1.5 flex gap-2 text-sm">
-              <dt className="w-24 shrink-0 text-zinc-500">{field.label}</dt>
-              {value !== null ? (
-                <dd className="text-zinc-200">{value}</dd>
-              ) : (
-                <dd className="italic text-zinc-600">Not available</dd>
+      {/* artwork block */}
+      <div className="px-4 pt-3">
+        {entity.type === "label" && !artworkUrl(entity) ? (
+          <div className="flex min-h-[130px] w-full flex-col justify-center rounded-md bg-cream px-5 py-4 text-bg">
+            <span className="text-[26px] font-bold uppercase leading-[1.05] tracking-tight">
+              {entity.name}
+            </span>
+            {labelCardCaption && (
+              <span className="mt-2 text-[10px] font-medium uppercase tracking-[0.18em]">
+                {labelCardCaption}
+              </span>
+            )}
+          </div>
+        ) : entity.type === "release" || entity.type === "release-group" ? (
+          <div className="flex gap-4">
+            <Artwork entity={entity} size={150} />
+            <div className="flex min-w-0 flex-col justify-center gap-1.5">
+              {releaseYear && (
+                <span className="text-2xl font-semibold tabular-nums text-text">
+                  {releaseYear}
+                </span>
+              )}
+              {labelNeighbors[0] && (
+                <span className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-muted">
+                  {labelNeighbors[0].name}
+                </span>
+              )}
+              {releaseFormatLine && (
+                <span className="text-xs text-muted">{releaseFormatLine}</span>
+              )}
+              {genreChips.length > 0 && (
+                <span className="text-xs text-muted">
+                  {genreChips.slice(0, 2).join(" / ")}
+                </span>
               )}
             </div>
-          );
-        })}
-      </dl>
-
-      {/* tracklist (live releases) */}
-      {tracks.length > 0 && (
-        <div className="border-t border-border px-4 py-3">
-          <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-            Tracklist
           </div>
-          {tracks.map((track) => {
-            const inGraph = Boolean(state.nodes[track.recordingId]);
-            const rowClass =
-              "flex w-full items-baseline gap-2 rounded px-1 py-1 text-left text-sm";
-            const label = (
-              <>
-                <span className="w-8 shrink-0 text-zinc-500">
-                  {track.number ?? track.position}
-                </span>
-                <span className="flex-1 truncate">{track.title}</span>
-                <span className="shrink-0 text-zinc-500">
-                  {track.lengthMs != null ? formatLength(track.lengthMs) : "—"}
-                </span>
-              </>
-            );
-            return inGraph ? (
-              <button
-                key={`${track.medium ?? 0}:${track.position}`}
-                type="button"
-                onClick={() => onSelectNode(track.recordingId)}
-                className={`${rowClass} text-zinc-300 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100`}
-              >
-                {label}
-              </button>
-            ) : (
-              <div
-                key={`${track.medium ?? 0}:${track.position}`}
-                className={`${rowClass} text-zinc-400`}
-              >
-                {label}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {verified && (
-        <div className="border-t border-border px-4 py-2 text-[10px] text-zinc-500">
-          Metadata retrieved from MusicBrainz. Artist credits are credits, not
-          production or remix claims.
-        </div>
-      )}
-
-      {/* connections */}
-      {connectionGroups.length > 0 && (
-        <div className="border-t border-border px-4 py-3">
-          {connectionGroups.map((group) => (
-            <div key={group.label} className="mb-3">
-              <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-                {group.label}
-              </div>
-              {group.items.map(({ rel, other }) => (
-                <button
-                  key={rel.id}
-                  type="button"
-                  onClick={() => onSelectNode(other.id)}
-                  className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm text-zinc-300 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100"
-                >
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: ENTITY_COLORS[other.type] }}
-                  />
-                  <span className="truncate">{other.name}</span>
-                </button>
-              ))}
+        ) : entity.type === "artist" ? (
+          <div className="flex items-center gap-4">
+            <Artwork entity={entity} size={104} />
+            <div className="min-w-0">
+              <h2 className="text-[26px] font-semibold leading-tight tracking-tight">
+                {entity.name}
+              </h2>
+              {subtitle && (
+                <div className="mt-1 text-sm text-muted">{subtitle}</div>
+              )}
             </div>
-          ))}
-          {expansion && expansion.total > 0 && (
-            <div className="mt-1 text-[11px] text-zinc-500">
-              Showing {expansion.loaded} of {expansion.total} connections
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        ) : null}
+      </div>
 
-      {/* actions */}
-      <div className="mt-auto border-t border-border p-4">
-        {failed && (
-          <div className="mb-3 flex items-center justify-between gap-2 text-xs text-red-300/80">
-            <span>Couldn&rsquo;t load connections from {providerLabel}</span>
-            <button
-              type="button"
-              onClick={() =>
-                expansion?.nextCursor
-                  ? onLoadMore(entity.id)
-                  : onExpand(entity.id)
-              }
-              className="rounded border border-border px-2 py-0.5 text-[11px] text-zinc-200 transition-colors duration-150 hover:bg-surface-2"
-            >
-              Retry
-            </button>
+      {/* name + description */}
+      <div className="px-4 pt-4">
+        {entity.type !== "artist" && (
+          <>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-tight">
+              {entity.name}
+            </h2>
+            {subtitle && <div className="mt-1 text-sm text-muted">{subtitle}</div>}
+          </>
+        )}
+        <p className="mt-3 text-sm leading-relaxed text-muted">{description}</p>
+
+        {genreChips.length > 0 && entity.type !== "release" && entity.type !== "release-group" && (
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            {genreChips.map((g) => (
+              <span
+                key={g}
+                className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted"
+              >
+                {g}
+              </span>
+            ))}
           </div>
         )}
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onExpand(entity.id)}
-            disabled={loading || (expanded && !failed)}
-            className="rounded bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 transition-colors duration-150 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {loading ? "Loading…" : "Expand"}
-          </button>
-          {more && (
-            <button
-              type="button"
-              onClick={() => onLoadMore(entity.id)}
-              disabled={loading}
-              className="rounded border border-border bg-surface-2 px-3 py-1.5 text-sm text-zinc-200 transition-colors duration-150 hover:bg-border disabled:opacity-50"
-            >
-              {loading ? "Loading…" : `Load more (${remaining} remaining)`}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={flashCrateHint}
-            className="flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-zinc-300 transition-colors duration-150 hover:bg-surface-2"
-          >
-            <Bookmark size={14} /> Save to Crate
-          </button>
+
+        {discogsLoading && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted/70">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" />
+            Loading Discogs…
+          </div>
+        )}
+      </div>
+
+      {/* actions */}
+      <div className="flex gap-2 px-4 pt-4">
+        {onSaveToCrate && onCreateCrate ? (
+          <SaveToCrateMenu
+            entity={entity}
+            crates={crates ?? []}
+            savedCrateIds={savedCrateIds}
+            onSave={onSaveToCrate}
+            onCreateCrate={onCreateCrate}
+          />
+        ) : (
           <button
             type="button"
             disabled
-            title="Listening links coming soon"
-            className="flex cursor-not-allowed items-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-zinc-500 opacity-50"
+            title="Crates unavailable"
+            className="flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-2.5 text-sm font-medium text-muted/70 opacity-50"
           >
-            <ExternalLink size={14} /> Listen
+            <Plus size={14} /> Save to crate
           </button>
-        </div>
-        {crateHint && (
-          <div className="mt-2 text-xs text-zinc-400">Coming soon</div>
+        )}
+        {ctaLabel && (
+          <button
+            type="button"
+            onClick={runCta}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-accent px-3 py-2.5 text-sm font-semibold text-bg transition-colors duration-150 hover:bg-accent/85 enabled:active:scale-[0.96] motion-safe:transition-transform"
+          >
+            {ctaLabel} <ArrowUpRight size={14} />
+          </button>
         )}
       </div>
-    </div>
+
+      {/* per-type sections */}
+      <div className="mt-4 flex flex-col gap-5 px-4 pb-4">
+        {/* label → featured releases + artists */}
+        {entity.type === "label" && releaseNeighbors.length > 0 && (
+          <section>
+            <SectionLabel>Featured releases</SectionLabel>
+            <div className="mt-2 flex flex-col">
+              {releaseNeighbors.slice(0, 4).map((r) => (
+                <RowThumb key={r.id} entity={r} onClick={() => onSelectNode(r.id)} />
+              ))}
+            </div>
+            {artistNeighbors.length > 0 && (
+              <div className="mt-2 text-[11px] text-muted/80">
+                Artists · {artistNeighbors.slice(0, 4).map((a) => a.name).join(", ")}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* release → tracklist */}
+        {tracks.length > 0 && (
+          <section>
+            <div className="flex items-baseline justify-between">
+              <SectionLabel>Tracks</SectionLabel>
+              <span className="text-[9px] uppercase tracking-[0.14em] text-muted/60">
+                Preview unavailable
+              </span>
+            </div>
+            <div className="mt-1 divide-y divide-border/60">
+              {tracks.map((track) => {
+                const inGraph = Boolean(state.nodes[track.recordingId]);
+                const row = (
+                  <>
+                    <span className="w-8 shrink-0 text-muted/70">
+                      {track.number ?? track.position}
+                    </span>
+                    <span className="flex-1 truncate">{track.title}</span>
+                    <span className="shrink-0 tabular-nums text-muted/70">
+                      {track.lengthMs != null ? formatLength(track.lengthMs) : "—"}
+                    </span>
+                  </>
+                );
+                const cls =
+                  "flex w-full items-baseline gap-2 px-1 py-2 text-left text-sm";
+                return inGraph ? (
+                  <button
+                    key={`${track.medium ?? 0}:${track.position}`}
+                    type="button"
+                    onClick={() => onSelectNode(track.recordingId)}
+                    className={`${cls} text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text`}
+                  >
+                    {row}
+                  </button>
+                ) : (
+                  <div
+                    key={`${track.medium ?? 0}:${track.position}`}
+                    className={`${cls} text-muted`}
+                  >
+                    {row}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* release → keep digging */}
+        {(entity.type === "release" || entity.type === "release-group") &&
+          keepDigging.length > 0 && (
+            <section>
+              <SectionLabel>Keep digging</SectionLabel>
+              <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
+                {keepDigging.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => onSelectNode(r.id)}
+                    title={r.name}
+                    className="shrink-0 transition-transform duration-150 enabled:active:scale-[0.96] motion-safe:hover:scale-[1.03]"
+                  >
+                    <Artwork entity={r} size={72} />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+        {/* artist → associated labels + selected discography */}
+        {entity.type === "artist" && (
+          <>
+            {labelNeighbors.length > 0 && (
+              <section>
+                <SectionLabel>Associated labels</SectionLabel>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                  {labelNeighbors.map((l) => (
+                    <button
+                      key={l.id}
+                      type="button"
+                      onClick={() => onSelectNode(l.id)}
+                      className="flex items-center gap-1 text-sm font-medium text-text transition-colors duration-150 hover:text-accent"
+                    >
+                      {l.name} <ArrowUpRight size={12} className="text-muted" />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+            {releaseNeighbors.length > 0 && (
+              <section>
+                <SectionLabel>Selected discography</SectionLabel>
+                <div className="mt-2 flex flex-col">
+                  {releaseNeighbors.slice(0, 5).map((r) => (
+                    <RowThumb
+                      key={r.id}
+                      entity={r}
+                      onClick={() => onSelectNode(r.id)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+
+        {/* recording → appears on */}
+        {entity.type === "recording" && releaseNeighbors.length > 0 && (
+          <section>
+            <SectionLabel>Appears on</SectionLabel>
+            <div className="mt-2 flex flex-col">
+              {releaseNeighbors.slice(0, 4).map((r) => (
+                <RowThumb key={r.id} entity={r} onClick={() => onSelectNode(r.id)} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* other connections (anything not covered above) */}
+        {entity.type !== "recording" && nearby.length > 0 && (
+          <section>
+            <SectionLabel>Connections</SectionLabel>
+            <div className="mt-1 flex flex-col">
+              {nearby
+                .filter(
+                  (n) =>
+                    !(entity.type === "label" && n.other.type !== "label") &&
+                    !(
+                      entity.type === "release" &&
+                      tracks.length > 0 &&
+                      n.other.type === "recording"
+                    )
+                )
+                .slice(0, 8)
+                .map(({ rel, other }) => (
+                  <button
+                    key={rel.id}
+                    type="button"
+                    onClick={() => onSelectNode(other.id)}
+                    className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text"
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: ENTITY_COLORS[other.type] }}
+                    />
+                    <span className="truncate">{other.name}</span>
+                    <span className="ml-auto shrink-0 text-[10px] text-muted/60">
+                      {ENTITY_LABELS[other.type]}
+                    </span>
+                  </button>
+                ))}
+            </div>
+            {expansion && expansion.total > 0 && (
+              <div className="mt-1 px-1 text-[11px] text-muted/70">
+                Showing {expansion.loaded} of {expansion.total} connections
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Discogs extras: videos + community */}
+        {discogs && (discogs.videos?.length || discogs.community) && (
+          <section>
+            <SectionLabel>From Discogs</SectionLabel>
+            {discogs.community && (
+              <div className="mt-1.5 text-xs text-muted/80">
+                {discogs.community.have} have · {discogs.community.want} want
+              </div>
+            )}
+            {discogs.videos?.map((v) => (
+              <a
+                key={v.url}
+                href={v.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex items-baseline gap-2 text-sm text-muted transition-colors duration-150 hover:text-text"
+              >
+                <span className="flex-1 truncate">{v.title}</span>
+                {v.durationSec != null && (
+                  <span className="shrink-0 text-xs text-muted/70">
+                    {formatLength(v.durationSec * 1000)}
+                  </span>
+                )}
+                <ExternalLink size={11} className="shrink-0 self-center text-muted/70" />
+              </a>
+            ))}
+          </section>
+        )}
+
+        {/* expansion controls + source captions */}
+        <section className="border-t border-border pt-3">
+          {failed && (
+            <div className="mb-3 flex items-center justify-between gap-2 text-xs text-red-300/80">
+              <span>Couldn&rsquo;t load connections from {providerLabel}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  expansion?.nextCursor ? onLoadMore(entity.id) : onExpand(entity.id)
+                }
+                className="rounded border border-border px-2 py-0.5 text-[11px] text-text transition-colors duration-150 hover:bg-surface-2"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onExpand(entity.id)}
+              disabled={loading || (expanded && !failed)}
+              className="rounded-md border border-border px-3 py-1.5 text-xs text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {loading ? "Loading…" : "Expand"}
+            </button>
+            {more && (
+              <button
+                type="button"
+                onClick={() => onLoadMore(entity.id)}
+                disabled={loading}
+                className="rounded-md border border-border px-3 py-1.5 text-xs text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text disabled:opacity-50"
+              >
+                {loading ? "Loading…" : `Load more (${remaining} remaining)`}
+              </button>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-muted/60">
+            {entity.provenance === "demo" ? (
+              <span>Illustrative demo data</span>
+            ) : (
+              <span>
+                Metadata retrieved from MusicBrainz. Artist credits are credits,
+                not production or remix claims.
+              </span>
+            )}
+            {verified && entity.source && (
+              <a
+                href={entity.source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 transition-colors duration-150 hover:bg-surface-2 hover:text-text"
+              >
+                MusicBrainz <ExternalLink size={9} />
+              </a>
+            )}
+            {discogs && (
+              <a
+                href={discogs.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 transition-colors duration-150 hover:bg-surface-2 hover:text-text"
+              >
+                Discogs <ExternalLink size={9} />
+              </a>
+            )}
+          </div>
+        </section>
+      </div>
+    </motion.div>
   );
 }

@@ -323,3 +323,80 @@ describe("graphReducer", () => {
     expect(state.parentOf).toEqual({});
   });
 });
+
+describe("ENRICH", () => {
+  const enrichment = {
+    kind: "release" as const,
+    id: 750726,
+    url: "https://www.discogs.com/release/750726",
+    genres: ["Electronic"],
+    styles: ["House"],
+  };
+
+  it("sets enrichment and merges genres into metadata", async () => {
+    let state = await initState();
+    state = graphReducer(state, {
+      type: "ENRICH",
+      id: ROOT_ID,
+      enrichment,
+      fetchedAt: 1234,
+    });
+    const node = state.nodes[ROOT_ID];
+    expect(node.enrichment).toEqual({
+      discogs: enrichment,
+      fetchedAt: 1234,
+    });
+    expect(node.metadata?.genres).toEqual(["Electronic", "House"]);
+  });
+
+  it("records an explicit null result without genres", async () => {
+    let state = await initState();
+    state = graphReducer(state, {
+      type: "ENRICH",
+      id: ROOT_ID,
+      enrichment: null,
+      fetchedAt: 5,
+    });
+    expect(state.nodes[ROOT_ID].enrichment).toEqual({
+      discogs: undefined,
+      fetchedAt: 5,
+    });
+  });
+
+  it("is a no-op on an unknown id", async () => {
+    const state = await initState();
+    const next = graphReducer(state, {
+      type: "ENRICH",
+      id: "mb:release:missing",
+      enrichment,
+      fetchedAt: 1,
+    });
+    expect(next).toBe(state);
+  });
+
+  it("survives a later mergePage (enrichment is never clobbered)", async () => {
+    let state = await initState();
+    state = graphReducer(state, {
+      type: "ENRICH",
+      id: ROOT_ID,
+      enrichment,
+      fetchedAt: 7,
+    });
+    const page = await firstPage(ROOT_ID);
+    // a sparse copy of the root in a later page must not drop enrichment
+    const sparse = {
+      ...page,
+      entities: [
+        ...page.entities,
+        {
+          id: ROOT_ID,
+          name: "Strictly Rhythm",
+          type: "label" as const,
+          provenance: "verified" as const,
+        },
+      ],
+    };
+    state = graphReducer(state, { type: "EXPAND", id: ROOT_ID, page: sparse });
+    expect(state.nodes[ROOT_ID].enrichment?.discogs?.id).toBe(750726);
+  });
+});

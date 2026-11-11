@@ -1,28 +1,40 @@
 {
- "ipis": [],
- "disambiguation": "",
- "type-id": "7aaa37fe-2def-3476-b359-80245850062d",
- "area": {
-  "iso-3166-1-codes": [
-   "US"
-  ],
-  "type": null,
-  "sort-name": "United States",
-  "id": "489ce91b-6658-3307-9877-795b68554c98",
-  "type-id": null,
-  "name": "United States",
-  "disambiguation": ""
- },
- "country": "US",
- "isnis": [],
- "label-code": 2611,
- "life-span": {
-  "ended": false,
-  "end": null,
-  "begin": "1989"
- },
- "name": "Strictly Rhythm",
- "sort-name": "Strictly Rhythm",
- "type": "Original Production",
- "id": "29c1256a-d989-4035-a856-95d707e2082c"
+  "ipis": [],
+  "disambiguation": "",
+  "type-id": "7aaa37fe-2def-3476-b359-80245850062d",
+  "area": {
+    "iso-3166-1-codes": [
+      "US"
+    ],
+    "type": null,
+    "sort-name": "United States",
+    "id": "489ce91b-6658-3307-9877-795b68554c98",
+    "type-id": null,
+    "name": "United States",
+    "disambiguation": ""
+  },
+  "country": "US",
+  "isnis": [],
+  "label-code": 2611,
+  "life-span": {
+    "ended": false,
+    "end": null,
+    "begin": "1989"
+  },
+  "name": "Strictly Rhythm",
+  "sort-name": "Strictly Rhythm",
+  "type": "Original Production",
+  "id": "29c1256a-d989-4035-a856-95d707e2082c",
+  "relations": [
+    {
+      "type": "discogs",
+      "type-id": "a50a1d20-2b20-4d2c-9a29-eb771dd78386",
+      "target-type": "url",
+      "direction": "forward",
+      "url": {
+        "id": "4e010437-92d1-42d8-a7d9-a439f1beda40",
+        "resource": "https://www.discogs.com/label/609"
+      }
+    }
+  ]
 }

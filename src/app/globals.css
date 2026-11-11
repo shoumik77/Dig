@@ -1,16 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0b0b0d;
-  --color-surface: #121216;
-  --color-surface-2: #18181d;
-  --color-border: #232329;
+  /* Figma tokens: Canvas / Surface / Elevated / Border / Ink / Muted / Acid */
+  --color-bg: #101010;
+  --color-surface: #191919;
+  --color-surface-2: #222222;
+  --color-border: #303030;
+  --color-text: #f2f0ea;
+  --color-muted: #a3a19b;
+  --color-accent: #d6ff57;
+  --color-cream: #e8e4d8;
+
+  /* entity palette — keep in sync with ENTITY_COLORS in
+     src/components/graph/graphStyles.ts */
   --color-label: #f5a524;
   --color-artist: #2dd4bf;
+  --color-release-group: #fb7185;
   --color-release: #a78bfa;
+  --color-recording: #60a5fa;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
   background: var(--color-bg);
-  color: var(--color-text, #f4f4f5);
+  color: var(--color-text);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+/* subtle, thin scrollbars to match the dark editorial surface */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }

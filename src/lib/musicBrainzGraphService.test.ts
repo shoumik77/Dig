@@ -105,3 +105,33 @@ describe("createMusicBrainzGraphService", () => {
     ).rejects.toMatchObject({ kind: "network" });
   });
 });
+
+describe("enrichment endpoints", () => {
+  it("getEnrichment hits /enrich/{type}/{mbid} and unwraps", async () => {
+    const data = { kind: "release", id: 7, url: "u" };
+    const fetchImpl = vi.fn<typeof fetch>(() => okEnvelope(data));
+    const svc = createMusicBrainzGraphService({ fetchImpl });
+    const res = await svc.getEnrichment(`mb:release:${UUID}`);
+    expect(res).toEqual(data);
+    expect(String(fetchImpl.mock.calls[0][0])).toBe(
+      `/api/music/enrich/release/${UUID}`
+    );
+  });
+
+  it("getEnrichment returns null for recordings and non-mb ids", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(() => okEnvelope(null));
+    const svc = createMusicBrainzGraphService({ fetchImpl });
+    expect(await svc.getEnrichment(`mb:recording:${UUID}`)).toBeNull();
+    expect(await svc.getEnrichment("label:strictly-rhythm")).toBeNull();
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("getCapabilities hits /capabilities", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(() =>
+      okEnvelope({ discogs: true })
+    );
+    const svc = createMusicBrainzGraphService({ fetchImpl });
+    expect(await svc.getCapabilities()).toEqual({ discogs: true });
+    expect(String(fetchImpl.mock.calls[0][0])).toBe("/api/music/capabilities");
+  });
+});

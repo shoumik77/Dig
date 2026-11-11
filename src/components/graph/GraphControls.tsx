@@ -1,58 +1,89 @@
 "use client";
 
-import { Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
-import { ENTITY_COLORS, ENTITY_LABELS } from "./graphStyles";
-import type { EntityType } from "@/types/music";
+import { Crosshair, Minus, Plus } from "lucide-react";
+import { ENTITY_COLORS } from "./graphStyles";
 
 interface GraphControlsProps {
+  zoomPct: number;
   onZoomIn(): void;
   onZoomOut(): void;
   onFit(): void;
-  onReset(): void;
 }
 
 const buttonClass =
-  "flex h-8 w-8 items-center justify-center border border-border bg-surface text-zinc-300 transition-colors duration-150 hover:bg-surface-2 hover:text-zinc-100";
+  "flex h-9 w-9 items-center justify-center text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-text";
 
-export function GraphControls({ onZoomIn, onZoomOut, onFit, onReset }: GraphControlsProps) {
+function LegendGlyph({ kind }: { kind: "square" | "circle" | "rect" | "arrow" }) {
+  const color =
+    kind === "square"
+      ? ENTITY_COLORS.release
+      : kind === "circle"
+        ? ENTITY_COLORS.artist
+        : kind === "rect"
+          ? ENTITY_COLORS.label
+          : ENTITY_COLORS.recording;
   return (
-    <>
-      <div className="absolute bottom-4 left-4 flex flex-col gap-1.5 rounded bg-surface/90 px-3 py-2 text-xs text-zinc-400 border border-border">
-        {(
-          [
-            "label",
-            "artist",
-            "release-group",
-            "release",
-            "recording",
-          ] as EntityType[]
-        ).map((t) => (
-          <div key={t} className="flex items-center gap-2">
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: ENTITY_COLORS[t] }}
-            />
-            {ENTITY_LABELS[t]}
-          </div>
-        ))}
-        <div className="mt-1 border-t border-border pt-1.5 text-[10px] text-zinc-500">
-          Dashed outline = more connections to load
-        </div>
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden className="shrink-0">
+      {kind === "square" && (
+        <rect x="1.5" y="1.5" width="9" height="9" rx="1.5" fill={color} />
+      )}
+      {kind === "circle" && <circle cx="6" cy="6" r="4.5" fill={color} />}
+      {kind === "rect" && (
+        <rect x="1" y="3" width="10" height="6" rx="1" fill={color} />
+      )}
+      {kind === "arrow" && (
+        <path
+          d="M2.5 10.5 9.5 3.5M9.5 3.5H5M9.5 3.5V8"
+          stroke={color}
+          strokeWidth="1.5"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+    </svg>
+  );
+}
+
+export function GraphControls({ zoomPct, onZoomIn, onZoomOut, onFit }: GraphControlsProps) {
+  return (
+    <div className="flex items-center gap-4">
+      {/* legend — mirrors the node shapes on the canvas */}
+      <div className="hidden items-center gap-3 text-[10px] text-muted sm:flex">
+        <span className="flex items-center gap-1.5">
+          <LegendGlyph kind="square" /> Release
+        </span>
+        <span className="flex items-center gap-1.5">
+          <LegendGlyph kind="circle" /> Artist
+        </span>
+        <span className="flex items-center gap-1.5">
+          <LegendGlyph kind="rect" /> Label
+        </span>
+        <span className="flex items-center gap-1.5">
+          <LegendGlyph kind="arrow" /> Recording
+        </span>
       </div>
-      <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-        <button type="button" className={buttonClass} onClick={onZoomIn} aria-label="Zoom in">
-          <Plus size={16} />
-        </button>
+
+      <div className="flex divide-x divide-border overflow-hidden rounded-md border border-border bg-surface/85 backdrop-blur-sm">
         <button type="button" className={buttonClass} onClick={onZoomOut} aria-label="Zoom out">
-          <Minus size={16} />
+          <Minus size={14} />
         </button>
-        <button type="button" className={buttonClass} onClick={onFit} aria-label="Fit graph">
-          <Maximize2 size={16} />
+        <button
+          type="button"
+          className={`${buttonClass} w-14 text-xs tabular-nums`}
+          onClick={onFit}
+          aria-label="Fit graph"
+          title="Fit graph"
+        >
+          {zoomPct}%
         </button>
-        <button type="button" className={buttonClass} onClick={onReset} aria-label="Reset graph">
-          <RotateCcw size={16} />
+        <button type="button" className={buttonClass} onClick={onZoomIn} aria-label="Zoom in">
+          <Plus size={14} />
+        </button>
+        <button type="button" className={buttonClass} onClick={onFit} aria-label="Center graph">
+          <Crosshair size={14} />
         </button>
       </div>
-    </>
+    </div>
   );
 }

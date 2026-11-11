@@ -3,7 +3,11 @@ import { GraphServiceError, type GraphErrorKind } from "./graphErrors";
 import type { GraphService } from "./graphService";
 import { parseMbId } from "./mbIds";
 import type { ConnectionsPage, SearchResults } from "@/types/graph";
-import type { EntityType, MusicEntity } from "@/types/music";
+import type {
+  DiscogsEnrichment,
+  EntityType,
+  MusicEntity,
+} from "@/types/music";
 
 interface Envelope<T> {
   ok: boolean;
@@ -101,6 +105,25 @@ export function createMusicBrainzGraphService(
     searchEntities(query, q = {}) {
       const type = q.type ?? "label";
       return get<SearchResults>(searchPath(query, type, 10));
+    },
+
+    async getEnrichment(id) {
+      const parsed = parseMbId(id);
+      if (!parsed || parsed.type === "recording") return null;
+      try {
+        return await get<DiscogsEnrichment | null>(
+          `/enrich/${parsed.type}/${parsed.mbid}`
+        );
+      } catch (err) {
+        if (err instanceof GraphServiceError && err.kind === "not_found") {
+          return null;
+        }
+        throw err;
+      }
+    },
+
+    getCapabilities() {
+      return get<{ discogs: boolean }>("/capabilities");
     },
 
     getDefaultRootId() {
