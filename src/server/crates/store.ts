@@ -103,7 +103,7 @@ export function createCrateStore(db?: Database.Database): CrateStore {
         .prepare(
           `SELECT c.*, COUNT(i.entity_id) AS item_count
            FROM crates c LEFT JOIN crate_items i ON i.crate_id = c.id
-           GROUP BY c.id ORDER BY c.created_at ASC, c.id ASC`
+           GROUP BY c.id ORDER BY c.created_at ASC, c.rowid ASC`
         )
         .all() as (CrateRow & { item_count: number })[];
       return rows.map((r) => ({ ...toCrate(r), itemCount: r.item_count }));
